@@ -17,6 +17,16 @@ interface TreeRow {
           <i class="fa-solid fa-folder-tree text-sky-400"></i>
           <h2 class="text-sm font-semibold text-slate-200">Explorador</h2>
         </div>
+        @if (closeable()) {
+          <button
+            type="button"
+            class="lg:hidden flex size-7 items-center justify-center rounded-lg text-slate-400 transition-all hover:bg-white/10 hover:text-white"
+            aria-label="Cerrar panel"
+            (click)="close.emit()"
+          >
+            <i class="fa-solid fa-xmark"></i>
+          </button>
+        }
       </header>
 
       <div class="flex-1 overflow-y-auto p-2 custom-scrollbar">
@@ -90,9 +100,11 @@ export class TreePanelComponent {
   readonly nodes = input<TreeNode[]>([]);
   readonly currentPath = input('/');
   readonly expandedPaths = input<string[]>([]);
+  readonly closeable = input<boolean>(false);
   readonly selectPath = output<string>();
   readonly loadChildren = output<string>();
   readonly expandedPathsChange = output<string[]>();
+  readonly close = output<void>();
 
   readonly visibleRows = computed<TreeRow[]>(() => {
     const rows: TreeRow[] = [];

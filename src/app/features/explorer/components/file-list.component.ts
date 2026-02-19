@@ -18,7 +18,7 @@ import { SearchFilters, SearchPanelComponent } from './search-panel.component';
       (dragleave)="onExternalDragLeave($event)"
       (drop)="onExternalDrop($event)"
     >
-      <header class="flex shrink-0 flex-col gap-4 border-b border-white/5 bg-white/5 p-4">
+      <header class="flex shrink-0 flex-col gap-3 border-b border-white/5 bg-white/5 p-3 sm:gap-4 sm:p-4">
         <app-search-panel (search)="search.emit($event)" (clearFilters)="clearSearch.emit()" />
 
         <!-- External file drop overlay -->
@@ -33,30 +33,30 @@ import { SearchFilters, SearchPanelComponent } from './search-panel.component';
           </div>
         }
 
-        <div class="flex items-center justify-between">
-          <div class="flex items-center gap-2">
+        <div class="flex flex-wrap items-center justify-between gap-2">
+          <div class="flex flex-wrap items-center gap-2">
             <i class="fa-solid fa-table-list text-sky-400"></i>
             <h2 class="text-sm font-semibold text-slate-200">
               {{ isSearchMode() ? 'Resultados de búsqueda' : 'Contenido' }}
             </h2>
-            <span class="ml-2 rounded-full bg-white/10 px-2.5 py-0.5 text-xs font-medium text-slate-300">
+            <span class="rounded-full bg-white/10 px-2.5 py-0.5 text-xs font-medium text-slate-300">
               {{ totalItems() }} items
             </span>
             @if (selectedPaths().length > 1) {
               <span class="rounded-full bg-sky-500/20 px-2.5 py-0.5 text-xs font-medium text-sky-300">
-                {{ selectedPaths().length }} seleccionados
+                {{ selectedPaths().length }} sel.
               </span>
             }
             @if (isDragging()) {
-              <span class="rounded-full bg-amber-500/20 px-2.5 py-0.5 text-xs font-medium text-amber-300">
+              <span class="hidden rounded-full bg-amber-500/20 px-2.5 py-0.5 text-xs font-medium text-amber-300 sm:inline-flex sm:items-center">
                 <i class="fa-solid fa-hand-pointer mr-1"></i>
                 Arrastrando {{ dragCount() }} {{ dragCount() === 1 ? 'elemento' : 'elementos' }}
               </span>
             }
           </div>
 
-          <div class="flex items-center gap-3">
-            <span class="text-xs text-slate-400">
+          <div class="flex items-center gap-2">
+            <span class="hidden text-xs text-slate-400 sm:inline">
               Página {{ page() }} de {{ totalPages() }}
             </span>
             <div class="flex gap-1">
@@ -91,21 +91,21 @@ import { SearchFilters, SearchPanelComponent } from './search-panel.component';
       >
         <table class="w-full table-fixed text-left text-sm">
           <colgroup>
-            <col style="width:2.5rem" />
-            <col style="width:35%" />
-            <col style="width:7rem" />
-            <col style="width:10rem" />
-            <col style="width:10rem" />
-            <col style="width:5.5rem" />
+            <col class="w-10" />
+            <col />
+            <col class="hidden w-24 sm:table-column" />
+            <col class="hidden w-36 md:table-column" />
+            <col class="hidden w-36 lg:table-column" />
+            <col class="w-20" />
           </colgroup>
           <thead class="sticky top-0 z-10 bg-slate-900/95 backdrop-blur-md">
             <tr class="border-b border-white/5 text-xs font-medium text-slate-400">
-              <th class="px-4 py-3" aria-label="Selección"></th>
-              <th class="px-4 py-3">Nombre</th>
-              <th class="px-4 py-3">Tamaño</th>
-              <th class="px-4 py-3">Modificado</th>
-              <th class="px-4 py-3">Creado</th>
-              <th class="px-4 py-3 text-center">Acciones</th>
+              <th class="px-2 py-3 sm:px-4" aria-label="Selección"></th>
+              <th class="px-2 py-3 sm:px-4">Nombre</th>
+              <th class="hidden px-4 py-3 sm:table-cell">Tamaño</th>
+              <th class="hidden px-4 py-3 md:table-cell">Modificado</th>
+              <th class="hidden px-4 py-3 lg:table-cell">Creado</th>
+              <th class="px-2 py-3 text-center sm:px-4">Acciones</th>
             </tr>
           </thead>
           <tbody class="divide-y divide-white/5">
@@ -126,8 +126,8 @@ import { SearchFilters, SearchPanelComponent } from './search-panel.component';
                 (dragleave)="onDragLeaveParent()"
                 (drop)="onDropOnParent($event)"
               >
-                <td class="px-4 py-3"></td>
-                <td class="px-4 py-3">
+                <td class="px-2 py-3 sm:px-4"></td>
+                <td class="px-2 py-3 sm:px-4">
                   <div class="flex items-center gap-3">
                     <div class="flex size-8 shrink-0 items-center justify-center rounded-lg bg-white/5">
                       <i class="fa-solid fa-folder-open text-slate-400"></i>
@@ -135,10 +135,10 @@ import { SearchFilters, SearchPanelComponent } from './search-panel.component';
                     <span class="font-medium text-slate-400 transition-colors group-hover:text-slate-200">..</span>
                   </div>
                 </td>
-                <td class="px-4 py-3 text-slate-500">-</td>
-                <td class="px-4 py-3 text-slate-500">-</td>
-                <td class="px-4 py-3 text-slate-500">-</td>
-                <td class="px-4 py-3"></td>
+                <td class="hidden px-4 py-3 text-slate-500 sm:table-cell">-</td>
+                <td class="hidden px-4 py-3 text-slate-500 md:table-cell">-</td>
+                <td class="hidden px-4 py-3 text-slate-500 lg:table-cell">-</td>
+                <td class="px-2 py-3 sm:px-4"></td>
               </tr>
             }
 
@@ -188,7 +188,7 @@ import { SearchFilters, SearchPanelComponent } from './search-panel.component';
                 (drop)="onDrop($event, item)"
               >
                 <!-- Checkbox -->
-                <td class="px-4 py-3">
+                <td class="px-2 py-3 sm:px-4">
                   <div class="flex items-center justify-center">
                     <input
                       type="checkbox"
@@ -204,7 +204,7 @@ import { SearchFilters, SearchPanelComponent } from './search-panel.component';
                 </td>
 
                 <!-- Name -->
-                <td class="overflow-hidden px-4 py-3">
+                <td class="overflow-hidden px-2 py-3 sm:px-4">
                   <div class="flex min-w-0 items-center gap-3">
                     <div class="flex size-8 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-white/5 shadow-inner">
                       @if (isImage(item) && thumbnailUrl(item.path)) {
@@ -232,11 +232,11 @@ import { SearchFilters, SearchPanelComponent } from './search-panel.component';
                   </div>
                 </td>
 
-                <td class="px-4 py-3 text-slate-400">{{ itemMeta(item) }}</td>
-                <td class="px-4 py-3 text-slate-400">{{ formatDate(item.modified_at) }}</td>
-                <td class="px-4 py-3 text-slate-400">{{ formatDate(item.created_at) }}</td>
+                <td class="hidden px-4 py-3 text-slate-400 sm:table-cell">{{ itemMeta(item) }}</td>
+                <td class="hidden px-4 py-3 text-slate-400 md:table-cell">{{ formatDate(item.modified_at) }}</td>
+                <td class="hidden px-4 py-3 text-slate-400 lg:table-cell">{{ formatDate(item.created_at) }}</td>
 
-                <td class="px-3 py-3">
+                <td class="px-2 py-3 sm:px-3">
                   <div class="flex items-center justify-center gap-1">
                     <button
                       type="button"
@@ -249,7 +249,7 @@ import { SearchFilters, SearchPanelComponent } from './search-panel.component';
                     </button>
                     <button
                       type="button"
-                      class="inline-flex size-7 items-center justify-center rounded-lg text-slate-400 transition-all hover:bg-white/10 hover:text-white"
+                      class="hidden size-7 items-center justify-center rounded-lg text-slate-400 transition-all hover:bg-white/10 hover:text-white sm:inline-flex"
                       (click)="$event.stopPropagation(); info.emit(item.path)"
                       aria-label="Información"
                       title="Información"

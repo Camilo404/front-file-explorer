@@ -51,6 +51,15 @@ interface BreadcrumbItem {
     <section class="space-y-3">
       <nav class="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-white/10 bg-slate-900/50 px-4 py-3 text-sm shadow-2xl backdrop-blur-xl">
         <div class="flex flex-wrap items-center gap-1">
+          <!-- Tree toggle: only visible on mobile -->
+          <button
+            type="button"
+            class="lg:hidden flex items-center justify-center size-8 rounded-lg text-slate-300 transition-all hover:bg-white/10 hover:text-white mr-1"
+            aria-label="Mostrar árbol de directorios"
+            (click)="isMobileTreeOpen.set(!isMobileTreeOpen())"
+          >
+            <i class="fa-solid fa-folder-tree text-sky-400"></i>
+          </button>
           <i class="fa-solid fa-house text-sky-400 mr-2"></i>
           @for (crumb of breadcrumbs(); track crumb.path) {
             <button
@@ -75,16 +84,34 @@ interface BreadcrumbItem {
         />
       </nav>
 
+      <!-- Mobile tree backdrop -->
+      @if (isMobileTreeOpen()) {
+        <div
+          class="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm lg:hidden"
+          aria-hidden="true"
+          (click)="isMobileTreeOpen.set(false)"
+        ></div>
+      }
+
       <div class="grid gap-3 lg:grid-cols-[320px_1fr] items-start">
-        <app-tree-panel
-          class="h-[calc(100vh-11rem)] sticky top-24 min-w-0"
-          [nodes]="treeNodes()"
-          [currentPath]="currentPath()"
-          [expandedPaths]="expandedTreePaths()"
-          (selectPath)="navigateTo($event)"
-          (loadChildren)="loadTreeChildren($event)"
-          (expandedPathsChange)="onExpandedPathsChange($event)"
-        />
+        <!-- Tree panel: fixed drawer on mobile, in-grid on desktop -->
+        <div
+          class="fixed top-16 bottom-0 left-0 z-50 w-72 transition-transform duration-300 ease-in-out
+                 lg:static lg:z-auto lg:w-auto lg:translate-x-0 lg:top-auto lg:bottom-auto"
+          [class.-translate-x-full]="!isMobileTreeOpen()"
+        >
+          <app-tree-panel
+            class="h-full lg:h-[calc(100vh-11rem)] lg:sticky lg:top-24 min-w-0"
+            [closeable]="true"
+            [nodes]="treeNodes()"
+            [currentPath]="currentPath()"
+            [expandedPaths]="expandedTreePaths()"
+            (selectPath)="navigateTo($event); isMobileTreeOpen.set(false)"
+            (loadChildren)="loadTreeChildren($event)"
+            (expandedPathsChange)="onExpandedPathsChange($event)"
+            (close)="isMobileTreeOpen.set(false)"
+          />
+        </div>
 
         <div class="flex flex-col gap-3 h-[calc(100vh-11rem)] min-w-0">
           <app-file-list
@@ -195,6 +222,7 @@ export class ExplorerPage {
   readonly isContextMenuOpen = signal(false);
   readonly contextMenuX = signal(0);
   readonly contextMenuY = signal(0);
+  readonly isMobileTreeOpen = signal(false);
 
   readonly selectedCount = computed(() => this.selectedPaths().length);
   readonly parentPath = computed<string | null>(() => {

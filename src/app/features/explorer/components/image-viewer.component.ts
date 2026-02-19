@@ -8,6 +8,7 @@ import { ChangeDetectionStrategy, Component, computed, effect, input, output, si
     '(document:keydown.arrowleft)': 'goPrev()',
     '(document:keydown.arrowright)': 'goNext()',
     '(document:mouseup)': 'endPan()',
+    '(document:touchend)': 'endPan()',
   },
   styles: [
     `
@@ -82,7 +83,10 @@ import { ChangeDetectionStrategy, Component, computed, effect, input, output, si
             (mousedown)="startPan($event)"
             (mousemove)="onPan($event)"
             (mouseleave)="endPan()"
-            (dblclick)="toggleFitZoom()">
+            (dblclick)="toggleFitZoom()"
+            (touchstart)="onTouchStart($event)"
+            (touchmove)="onTouchMove($event)"
+            (touchend)="onTouchEnd($event)">
 
             <!-- Loading spinner -->
             @if (isLoading()) {
@@ -121,21 +125,21 @@ import { ChangeDetectionStrategy, Component, computed, effect, input, output, si
         </div>
 
         <!-- ── Bottom Toolbar ───────────────────────────────── -->
-        <footer class="absolute bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2 rounded-full bg-white/10 p-1.5 backdrop-blur-xl border border-white/10 shadow-2xl">
+        <footer class="absolute bottom-4 sm:bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-1 sm:gap-2 rounded-full bg-white/10 p-1 sm:p-1.5 backdrop-blur-xl border border-white/10 shadow-2xl">
           <button type="button"
-            class="flex size-10 items-center justify-center rounded-full text-white/80 transition-all hover:bg-white/20 hover:text-white active:scale-95"
+            class="flex size-11 sm:size-10 items-center justify-center rounded-full text-white/80 transition-all hover:bg-white/20 hover:text-white active:scale-95"
             aria-label="Zoom out" title="Zoom out" (click)="zoomOut()">
             <i class="fa-solid fa-magnifying-glass-minus text-lg"></i>
           </button>
 
           <button type="button"
-            class="min-w-18 rounded-full px-3 py-1.5 text-center font-mono text-sm font-medium text-white transition-all hover:bg-white/20 active:scale-95"
+            class="min-w-16 rounded-full px-3 py-1.5 text-center font-mono text-sm font-medium text-white transition-all hover:bg-white/20 active:scale-95"
             aria-label="Reset zoom" title="Reset zoom" (click)="resetView()">
             {{ zoomLabel() }}
           </button>
 
           <button type="button"
-            class="flex size-10 items-center justify-center rounded-full text-white/80 transition-all hover:bg-white/20 hover:text-white active:scale-95"
+            class="flex size-11 sm:size-10 items-center justify-center rounded-full text-white/80 transition-all hover:bg-white/20 hover:text-white active:scale-95"
             aria-label="Zoom in" title="Zoom in" (click)="zoomIn()">
             <i class="fa-solid fa-magnifying-glass-plus text-lg"></i>
           </button>
@@ -166,10 +170,19 @@ export class ImageViewerComponent {
   readonly isLoading = signal(false);
   readonly hasError = signal(false);
 
+  // Mouse pan
   private panStartX = 0;
   private panStartY = 0;
   private panOriginX = 0;
   private panOriginY = 0;
+
+  // Touch state
+  private touchStartX = 0;
+  private touchStartY = 0;
+  private touchOriginX = 0;
+  private touchOriginY = 0;
+  private lastPinchDist = 0;
+  private isTouching = false;
 
   readonly zoomLabel = computed(() => `${Math.round(this.zoom() * 100)}%`);
   readonly transformStyle = computed(
@@ -276,6 +289,59 @@ export class ImageViewerComponent {
     if (this.isPanning()) {
       this.isPanning.set(false);
     }
+  }
+
+  // ── Touch handlers ───────────────────────────────────────────────────────
+
+  onTouchStart(event: TouchEvent): void {
+    if (event.touches.length === 1) {
+      this.isTouching = true;
+      this.lastPinchDist = 0;
+      this.touchStartX = event.touches[0].clientX;
+      this.touchStartY = event.touches[0].clientY;
+      this.touchOriginX = this.offsetX();
+      this.touchOriginY = this.offsetY();
+      this.isPanning.set(true);
+    } else if (event.touches.length === 2) {
+      this.isTouching = false;
+      this.isPanning.set(false);
+      this.lastPinchDist = this.getPinchDist(event);
+    }
+  }
+
+  onTouchMove(event: TouchEvent): void {
+    event.preventDefault();
+    if (event.touches.length === 1 && this.isTouching) {
+      const dx = event.touches[0].clientX - this.touchStartX;
+      const dy = event.touches[0].clientY - this.touchStartY;
+      this.offsetX.set(this.touchOriginX + dx);
+      this.offsetY.set(this.touchOriginY + dy);
+    } else if (event.touches.length === 2 && this.lastPinchDist > 0) {
+      const dist = this.getPinchDist(event);
+      this.setZoom(this.zoom() * (dist / this.lastPinchDist));
+      this.lastPinchDist = dist;
+    }
+  }
+
+  onTouchEnd(event: TouchEvent): void {
+    if (event.changedTouches.length === 1 && this.isTouching) {
+      const dx = event.changedTouches[0].clientX - this.touchStartX;
+      const dy = event.changedTouches[0].clientY - this.touchStartY;
+      // Swipe to navigate only when not zoomed in and gesture is mostly horizontal
+      if (Math.abs(dx) > 60 && Math.abs(dy) < 80 && this.zoom() <= 1.05) {
+        if (dx < 0) this.goNext();
+        else this.goPrev();
+      }
+    }
+    this.isTouching = false;
+    this.lastPinchDist = 0;
+    this.isPanning.set(false);
+  }
+
+  private getPinchDist(event: TouchEvent): number {
+    const dx = event.touches[0].clientX - event.touches[1].clientX;
+    const dy = event.touches[0].clientY - event.touches[1].clientY;
+    return Math.sqrt(dx * dx + dy * dy);
   }
 
   private setZoom(value: number): void {

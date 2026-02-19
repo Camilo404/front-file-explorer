@@ -1,4 +1,5 @@
-import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
+import { DOCUMENT } from '@angular/common';
+import { ChangeDetectionStrategy, Component, computed, inject, input, output } from '@angular/core';
 
 export type ContextMenuAction = 'rename' | 'move' | 'copy' | 'delete' | 'download' | 'info';
 
@@ -7,12 +8,29 @@ export type ContextMenuAction = 'rename' | 'move' | 'copy' | 'delete' | 'downloa
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     @if (isOpen()) {
+      <!-- Backdrop: covers screen on mobile, transparent on desktop -->
       <div
-        class="fixed z-50 min-w-48 overflow-hidden rounded-xl border border-white/10 bg-slate-900/80 p-1.5 text-sm text-slate-200 shadow-2xl backdrop-blur-xl"
-        [style.left.px]="x()"
-        [style.top.px]="y()"
+        class="fixed inset-0 z-40"
+        [class.bg-black/50]="isMobile()"
+        [class.backdrop-blur-sm]="isMobile()"
+        (click)="close.emit()"
+        aria-hidden="true"
+      ></div>
+
+      <div
+        [class]="isMobile()
+          ? 'fixed inset-x-0 bottom-0 z-50 overflow-hidden rounded-t-2xl border-t border-white/10 bg-slate-900/95 p-2 pb-6 text-sm text-slate-200 shadow-2xl backdrop-blur-xl'
+          : 'fixed z-50 min-w-48 overflow-hidden rounded-xl border border-white/10 bg-slate-900/80 p-1.5 text-sm text-slate-200 shadow-2xl backdrop-blur-xl'"
+        [style.left]="isMobile() ? null : clampedX() + 'px'"
+        [style.top]="isMobile() ? null : clampedY() + 'px'"
         (click)="$event.stopPropagation()"
       >
+        <!-- Mobile drag handle -->
+        @if (isMobile()) {
+          <div class="mb-2 flex justify-center" aria-hidden="true">
+            <div class="h-1 w-10 rounded-full bg-white/20"></div>
+          </div>
+        }
         <div class="px-2 py-1.5 text-xs font-medium text-slate-400">
           {{ selectedCount() }} seleccionado{{ selectedCount() !== 1 ? 's' : '' }}
         </div>
@@ -86,6 +104,8 @@ export type ContextMenuAction = 'rename' | 'move' | 'copy' | 'delete' | 'downloa
   `,
 })
 export class ContextMenuComponent {
+  private readonly doc = inject(DOCUMENT);
+
   readonly isOpen = input(false);
   readonly x = input(0);
   readonly y = input(0);
@@ -93,6 +113,27 @@ export class ContextMenuComponent {
 
   readonly action = output<ContextMenuAction>();
   readonly close = output<void>();
+
+  /** True when the viewport is narrower than the sm breakpoint (640 px). */
+  readonly isMobile = computed(() => {
+    // Depend on x/y so this re-evaluates every time the menu opens.
+    this.x(); this.y();
+    return (this.doc.defaultView?.innerWidth ?? 1024) < 640;
+  });
+
+  /** Clamped X position so the menu never overflows the right edge. */
+  readonly clampedX = computed(() => {
+    const menuW = 210; // slightly bigger than min-w-48 (192px) for safety
+    const vw = this.doc.defaultView?.innerWidth ?? 1024;
+    return Math.max(8, Math.min(this.x(), vw - menuW - 8));
+  });
+
+  /** Clamped Y position so the menu never overflows the bottom edge. */
+  readonly clampedY = computed(() => {
+    const menuH = 330; // approximate height of the menu
+    const vh = this.doc.defaultView?.innerHeight ?? 768;
+    return Math.max(8, Math.min(this.y(), vh - menuH - 8));
+  });
 
   onAction(actionType: ContextMenuAction): void {
     this.action.emit(actionType);

@@ -8,21 +8,31 @@ import { ConflictPolicy, OperationsApiService } from '../../core/api/operations-
 import { SearchApiService } from '../../core/api/search-api.service';
 import { ErrorStoreService } from '../../core/errors/error-store.service';
 import { FileItem, TreeNode } from '../../core/models/api.models';
+import { ContextMenuAction, ContextMenuComponent } from './components/context-menu.component';
+import { ExplorerToolbarComponent } from './components/explorer-toolbar.component';
 import { FileListComponent } from './components/file-list.component';
 import { ImageViewerComponent } from './components/image-viewer.component';
-import { OperationPayload, OperationsPanelComponent } from './components/operations-panel.component';
-import { SearchFilters, SearchPanelComponent } from './components/search-panel.component';
+import { SearchFilters } from './components/search-panel.component';
 import { TreePanelComponent } from './components/tree-panel.component';
+import { ConflictResolutionModalComponent } from '../../shared/components/conflict-resolution-modal.component';
+import { InputModalComponent } from '../../shared/components/input-modal.component';
 
 interface ExplorerUiState {
   currentPath: string;
   page: number;
   limit: number;
   searchFilters: SearchFilters | null;
-  createDirectoryName: string;
-  uploadConflictPolicy: ConflictPolicy;
   pathHistory: string[];
   expandedTreePaths: string[];
+}
+
+interface ActiveModalConfig {
+  title: string;
+  label?: string;
+  placeholder?: string;
+  initialValue?: string;
+  confirmLabel?: string;
+  isDanger?: boolean;
 }
 
 interface BreadcrumbItem {
@@ -32,106 +42,38 @@ interface BreadcrumbItem {
 
 @Component({
   selector: 'app-explorer-page',
-  imports: [SearchPanelComponent, TreePanelComponent, FileListComponent, OperationsPanelComponent, ImageViewerComponent],
+  imports: [TreePanelComponent, FileListComponent, ContextMenuComponent, ImageViewerComponent, ExplorerToolbarComponent, InputModalComponent, ConflictResolutionModalComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
+  host: {
+    '(document:click)': 'closeContextMenu()',
+  },
   template: `
     <section class="space-y-3">
-      <div class="flex flex-wrap items-center gap-2 rounded border border-slate-800 bg-slate-900 p-3">
-        <span class="text-xs text-slate-400">Path actual: {{ currentPath() }}</span>
-        <button
-          type="button"
-          class="rounded bg-slate-700 px-2 py-1 text-xs hover:bg-slate-600"
-          [disabled]="pathHistory().length === 0"
-          (click)="goBackFolder()"
-        >
-          Back Folder
-        </button>
-        <button
-          type="button"
-          class="rounded bg-slate-700 px-2 py-1 text-xs hover:bg-slate-600"
-          [disabled]="currentPath() === '/'"
-          (click)="goParentFolder()"
-        >
-          Parent Folder
-        </button>
-        <button type="button" class="rounded bg-slate-700 px-2 py-1 text-xs hover:bg-slate-600" (click)="refresh()">Refresh</button>
-        <input
-          type="text"
-          [value]="createDirectoryName()"
-          placeholder="Nuevo directorio"
-          class="rounded border border-slate-700 bg-slate-950 px-2 py-1 text-xs"
-          (input)="onDirectoryNameInput($event)"
-        />
-        <button type="button" class="rounded bg-slate-700 px-2 py-1 text-xs hover:bg-slate-600" (click)="createDirectory()">Create Dir</button>
-        <button type="button" class="rounded bg-slate-700 px-2 py-1 text-xs hover:bg-slate-600" (click)="downloadSelected()" [disabled]="selectedPaths().length !== 1">Download</button>
-        <button type="button" class="rounded bg-slate-700 px-2 py-1 text-xs hover:bg-slate-600" (click)="showInfoSelected()" [disabled]="selectedPaths().length !== 1">Info</button>
-        <button type="button" class="rounded bg-slate-700 px-2 py-1 text-xs hover:bg-slate-600" (click)="openThumbnailSelected()" [disabled]="selectedPaths().length !== 1">Thumbnail</button>
-        <select
-          [value]="uploadConflictPolicy()"
-          class="rounded border border-slate-700 bg-slate-950 px-2 py-1 text-xs"
-          (change)="setUploadConflictPolicy($event)"
-        >
-          <option value="rename">upload: rename</option>
-          <option value="overwrite">upload: overwrite</option>
-          <option value="skip">upload: skip</option>
-        </select>
-        <label class="rounded bg-blue-700 px-2 py-1 text-xs hover:bg-blue-600">
-          Upload
-          <input type="file" class="hidden" multiple (change)="uploadFiles($event)" />
-        </label>
-      </div>
-
-      <nav class="flex flex-wrap items-center gap-1 rounded border border-slate-800 bg-slate-900 px-3 py-2 text-xs">
-        @for (crumb of breadcrumbs(); track crumb.path) {
-          <button
-            type="button"
-            class="rounded bg-slate-800 px-2 py-1 hover:bg-slate-700"
-            [class.bg-blue-700]="crumb.path === currentPath()"
-            (click)="navigateTo(crumb.path)"
-          >
-            {{ crumb.label }}
-          </button>
-          @if (!$last) {
-            <span class="text-slate-500">/</span>
+      <nav class="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-white/10 bg-slate-900/50 px-4 py-3 text-sm shadow-2xl backdrop-blur-xl">
+        <div class="flex flex-wrap items-center gap-1">
+          <i class="fa-solid fa-house text-sky-400 mr-2"></i>
+          @for (crumb of breadcrumbs(); track crumb.path) {
+            <button
+              type="button"
+              class="rounded-lg px-3 py-1.5 font-medium transition-all hover:bg-white/10 hover:text-white"
+              [class.bg-sky-500/20]="crumb.path === currentPath()"
+              [class.text-sky-400]="crumb.path === currentPath()"
+              [class.text-slate-400]="crumb.path !== currentPath()"
+              (click)="navigateTo(crumb.path)"
+            >
+              {{ crumb.label }}
+            </button>
+            @if (!$last) {
+              <i class="fa-solid fa-chevron-right text-xs text-slate-600 mx-1"></i>
+            }
           }
-        }
-      </nav>
-
-      <app-operations-panel
-        [selectedCount]="selectedCount()"
-        (refresh)="refresh()"
-        (rename)="renameSelected($event)"
-        (move)="moveSelected($event)"
-        (copy)="copySelected($event)"
-        (delete)="deleteSelected()"
-        (restore)="restoreSelected()"
-      />
-
-      <app-search-panel (search)="runSearch($event)" (clearFilters)="clearSearch()" />
-
-      <div class="flex items-center justify-between rounded border border-slate-800 bg-slate-900 px-3 py-2 text-xs">
-        <span class="text-slate-400">
-          Modo: {{ searchFilters() ? 'search' : 'list' }} | Página {{ page() }}/{{ totalPages() }} | Total {{ totalItems() }}
-        </span>
-        <div class="flex gap-2">
-          <button
-            type="button"
-            class="rounded bg-slate-700 px-2 py-1 hover:bg-slate-600"
-            [disabled]="page() <= 1"
-            (click)="changePage(-1)"
-          >
-            Prev
-          </button>
-          <button
-            type="button"
-            class="rounded bg-slate-700 px-2 py-1 hover:bg-slate-600"
-            [disabled]="page() >= totalPages()"
-            (click)="changePage(1)"
-          >
-            Next
-          </button>
         </div>
-      </div>
+        <app-explorer-toolbar
+          (refreshClick)="refresh()"
+          (newDirectoryClick)="openCreateDirectoryModal()"
+          (uploadFiles)="uploadFiles($event)"
+        />
+      </nav>
 
       <div class="grid gap-3 lg:grid-cols-[320px_1fr]">
         <app-tree-panel
@@ -143,15 +85,34 @@ interface BreadcrumbItem {
           (expandedPathsChange)="onExpandedPathsChange($event)"
         />
 
-        <app-file-list
-          [items]="items()"
-          [selectedPaths]="selectedPaths()"
-          [thumbnailUrls]="thumbnailUrls()"
-          (open)="openItem($event)"
-          (toggleSelection)="toggleSelection($event)"
-          (info)="showItemInfo($event)"
-        />
+        <div class="flex flex-col gap-3">
+          <app-file-list
+            [items]="items()"
+            [selectedPaths]="selectedPaths()"
+            [thumbnailUrls]="thumbnailUrls()"
+            [page]="page()"
+            [totalPages]="totalPages()"
+            [totalItems]="totalItems()"
+            [isSearchMode]="searchFilters() !== null"
+            (open)="openItem($event)"
+            (toggleSelection)="toggleSelection($event)"
+            (info)="showItemInfo($event)"
+            (contextMenu)="openContextMenu($event)"
+            (search)="runSearch($event)"
+            (clearSearch)="clearSearch()"
+            (changePage)="changePage($event)"
+          />
+        </div>
       </div>
+
+      <app-context-menu
+        [isOpen]="isContextMenuOpen()"
+        [x]="contextMenuX()"
+        [y]="contextMenuY()"
+        [selectedCount]="selectedCount()"
+        (action)="handleContextMenuAction($event)"
+        (close)="closeContextMenu()"
+      />
 
       <app-image-viewer
         [open]="isImageViewerOpen()"
@@ -164,6 +125,25 @@ interface BreadcrumbItem {
         (close)="closeImageViewer()"
         (prev)="showPreviousImage()"
         (next)="showNextImage()"
+      />
+
+      <app-input-modal
+        [open]="activeModal() !== null"
+        [title]="activeModal()?.title ?? ''"
+        [label]="activeModal()?.label"
+        [placeholder]="activeModal()?.placeholder"
+        [initialValue]="activeModal()?.initialValue ?? ''"
+        [confirmLabel]="activeModal()?.confirmLabel"
+        [isDanger]="activeModal()?.isDanger ?? false"
+        (confirm)="onModalConfirm($event)"
+        (cancel)="onModalCancel()"
+      />
+
+      <app-conflict-resolution-modal
+        [open]="isConflictModalOpen()"
+        [conflictingNames]="conflictingFileNames()"
+        (resolve)="onConflictResolve($event)"
+        (cancel)="onConflictCancel()"
       />
     </section>
   `,
@@ -193,13 +173,22 @@ export class ExplorerPage {
   readonly viewerImageIndex = signal(-1);
   readonly selectedPaths = signal<string[]>([]);
   readonly searching = signal(false);
-  readonly createDirectoryName = signal('');
-  readonly uploadConflictPolicy = signal<ConflictPolicy>('rename');
+  readonly activeModal = signal<ActiveModalConfig | null>(null);
+  readonly isConflictModalOpen = signal(false);
+  readonly conflictingFileNames = signal<string[]>([]);
+
+  private pendingModalAction: ((value: string) => void) | null = null;
+  private pendingConflictFiles: File[] = [];
+  private firstRoundUploadedCount = 0;
   readonly page = signal(1);
   readonly limit = signal(50);
   readonly totalPages = signal(1);
   readonly totalItems = signal(0);
   readonly searchFilters = signal<SearchFilters | null>(null);
+
+  readonly isContextMenuOpen = signal(false);
+  readonly contextMenuX = signal(0);
+  readonly contextMenuY = signal(0);
 
   readonly selectedCount = computed(() => this.selectedPaths().length);
   readonly canShowPreviousImage = computed(
@@ -262,7 +251,11 @@ export class ExplorerPage {
     this.loadItems();
 
     this.explorerApi.tree({ path: '/', depth: 1, include_files: false, limit: 200 }).subscribe({
-      next: (result) => this.treeNodes.set(result.data.nodes),
+      next: (result) => {
+        this.treeNodes.set(result.data.nodes);
+        // Re-load children for all expanded paths after wiping the tree
+        this.reloadExpandedChildren();
+      },
       error: () => {},
     });
   }
@@ -364,37 +357,85 @@ export class ExplorerPage {
     this.loadItems();
   }
 
-  createDirectory(): void {
-    const name = this.createDirectoryName().trim();
-    if (!name) {
-      this.feedback.warning('DIRECTORY', 'Ingresa el nombre del directorio.');
-      return;
-    }
-
-    this.explorerApi.createDirectory(this.currentPath(), name).subscribe({
-      next: () => {
-        this.feedback.success('DIRECTORY_CREATED', `Directorio "${name}" creado.`);
-        this.createDirectoryName.set('');
-        this.persistState();
-        this.refresh();
+  openCreateDirectoryModal(): void {
+    this.openModal(
+      {
+        title: 'Nuevo directorio',
+        label: 'Nombre del directorio',
+        placeholder: 'mi-carpeta',
+        confirmLabel: 'Crear',
       },
-      error: () => {},
-    });
+      (name) => {
+        this.explorerApi.createDirectory(this.currentPath(), name).subscribe({
+          next: () => {
+            this.feedback.success('DIRECTORY_CREATED', `Directorio "${name}" creado.`);
+            this.refresh();
+          },
+          error: () => {},
+        });
+      }
+    );
   }
 
-  uploadFiles(event: Event): void {
-    const input = event.target as HTMLInputElement;
-    const fileList = input.files;
+  uploadFiles(fileList: FileList): void {
     if (!fileList || fileList.length === 0) {
       return;
     }
 
     const files = Array.from(fileList);
-    this.filesApi.upload(this.currentPath(), files, this.uploadConflictPolicy()).subscribe({
+    this.filesApi.upload(this.currentPath(), files, 'skip').subscribe({
       next: (response) => {
+        const conflictNames = response.failed
+          .filter((f) => f.reason.includes('CONFLICT') || f.reason.includes('target already exists'))
+          .map((f) => f.name);
+
+        const otherFailures = response.failed.filter(
+          (f) => !f.reason.includes('CONFLICT') && !f.reason.includes('target already exists')
+        );
+
+        if (conflictNames.length > 0) {
+          this.pendingConflictFiles = files.filter((f) => conflictNames.includes(f.name));
+          this.firstRoundUploadedCount = response.uploaded.length;
+          this.conflictingFileNames.set(conflictNames);
+          this.isConflictModalOpen.set(true);
+
+          if (otherFailures.length > 0) {
+            this.feedback.warning(
+              'UPLOAD',
+              `${response.uploaded.length} subidos. ${otherFailures.length} fallaron por otros motivos.`
+            );
+          }
+        } else {
+          const totalFailed = response.failed.length;
+          this.feedback.success(
+            'UPLOAD',
+            `Upload completado: ${response.uploaded.length} exitosos${
+              totalFailed > 0 ? `, ${totalFailed} fallidos` : ''
+            }.`
+          );
+          this.refresh();
+        }
+      },
+      error: () => {},
+    });
+  }
+
+  onConflictResolve(policy: ConflictPolicy): void {
+    this.isConflictModalOpen.set(false);
+    const files = this.pendingConflictFiles;
+    const firstRound = this.firstRoundUploadedCount;
+    this.pendingConflictFiles = [];
+    this.firstRoundUploadedCount = 0;
+    this.conflictingFileNames.set([]);
+
+    this.filesApi.upload(this.currentPath(), files, policy).subscribe({
+      next: (response) => {
+        const total = firstRound + response.uploaded.length;
         this.feedback.success(
           'UPLOAD',
-          `Upload completado: ${response.uploaded.length} exitosos, ${response.failed.length} fallidos.`
+          `Upload completado: ${total} exitosos${
+            response.failed.length > 0 ? `, ${response.failed.length} fallidos` : ''
+          }.`
         );
         this.refresh();
       },
@@ -402,74 +443,94 @@ export class ExplorerPage {
     });
   }
 
-  onDirectoryNameInput(event: Event): void {
-    const input = event.target as HTMLInputElement;
-    this.createDirectoryName.set(input.value);
-    this.persistState();
-  }
+  onConflictCancel(): void {
+    const firstRound = this.firstRoundUploadedCount;
+    this.isConflictModalOpen.set(false);
+    this.pendingConflictFiles = [];
+    this.firstRoundUploadedCount = 0;
+    this.conflictingFileNames.set([]);
 
-  setUploadConflictPolicy(event: Event): void {
-    const select = event.target as HTMLSelectElement;
-    if (select.value === 'rename' || select.value === 'overwrite' || select.value === 'skip') {
-      this.uploadConflictPolicy.set(select.value);
-      this.persistState();
+    if (firstRound > 0) {
+      this.feedback.success('UPLOAD', `${firstRound} archivo(s) subidos. Conflictos omitidos.`);
     }
+    this.refresh();
   }
 
-  renameSelected(newName: string): void {
+  renameSelected(): void {
     const target = this.selectedPaths()[0];
     if (!target) {
       return;
     }
-    const trimmedName = newName.trim();
-    if (!trimmedName) {
-      this.feedback.warning('RENAME', 'Ingresa un nuevo nombre para renombrar.');
-      return;
-    }
 
-    this.operationsApi.rename(target, trimmedName).subscribe({
-      next: () => {
-        this.feedback.success('RENAME', 'Elemento renombrado.');
-        this.refresh();
+    const currentName = target.split('/').pop() ?? '';
+    this.openModal(
+      {
+        title: 'Renombrar',
+        label: 'Nuevo nombre',
+        initialValue: currentName,
+        confirmLabel: 'Renombrar',
       },
-      error: () => {},
-    });
+      (newName) => {
+        // Preserve extension if the user accidentally removed it
+        const currentExt = currentName.includes('.') ? currentName.split('.').pop() : '';
+        const newExt = newName.includes('.') ? newName.split('.').pop() : '';
+        const finalName = currentExt && !newExt ? `${newName}.${currentExt}` : newName;
+
+        this.operationsApi.rename(target, finalName).subscribe({
+          next: () => {
+            this.feedback.success('RENAME', 'Elemento renombrado.');
+            this.refresh();
+          },
+          error: () => {},
+        });
+      }
+    );
   }
 
-  moveSelected(payload: OperationPayload): void {
-    if (!payload.destination) {
-      this.feedback.warning('MOVE', 'Ingresa destino para mover.');
-      return;
-    }
-
-    this.operationsApi.move(this.selectedPaths(), payload.destination, payload.conflictPolicy).subscribe({
-      next: (response) => {
-        this.feedback.success(
-          'MOVE',
-          `Move completado: ${response.moved.length} movidos, ${response.failed.length} fallidos.`
-        );
-        this.refresh();
+  moveSelected(): void {
+    this.openModal(
+      {
+        title: 'Mover',
+        label: 'Directorio destino',
+        placeholder: '/carpeta-destino',
+        confirmLabel: 'Mover',
       },
-      error: () => {},
-    });
+      (destination) => {
+        this.operationsApi.move(this.selectedPaths(), destination, 'rename').subscribe({
+          next: (response) => {
+            this.feedback.success(
+              'MOVE',
+              `Move completado: ${response.moved.length} movidos, ${response.failed.length} fallidos.`
+            );
+            this.refresh();
+          },
+          error: () => {},
+        });
+      }
+    );
   }
 
-  copySelected(payload: OperationPayload): void {
-    if (!payload.destination) {
-      this.feedback.warning('COPY', 'Ingresa destino para copiar.');
-      return;
-    }
-
-    this.operationsApi.copy(this.selectedPaths(), payload.destination, payload.conflictPolicy).subscribe({
-      next: (response) => {
-        this.feedback.success(
-          'COPY',
-          `Copy completado: ${response.copied.length} copiados, ${response.failed.length} fallidos.`
-        );
-        this.refresh();
+  copySelected(): void {
+    this.openModal(
+      {
+        title: 'Copiar',
+        label: 'Directorio destino',
+        placeholder: '/carpeta-destino',
+        confirmLabel: 'Copiar',
       },
-      error: () => {},
-    });
+      (destination) => {
+        this.operationsApi.copy(this.selectedPaths(), destination, 'rename').subscribe({
+          next: (response) => {
+            this.feedback.success(
+              'COPY',
+              `Copy completado: ${response.copied.length} copiados, ${response.failed.length} fallidos.`
+            );
+            this.refresh();
+          },
+          error: () => {},
+        });
+      }
+    );
   }
 
   deleteSelected(): void {
@@ -575,6 +636,57 @@ export class ExplorerPage {
     }
 
     this.loadViewerImageByIndex(nextIndex);
+  }
+
+  openContextMenu(eventData: { event: MouseEvent; item: FileItem }): void {
+    const { event, item } = eventData;
+    
+    // If the item is not already selected, select only this item
+    if (!this.selectedPaths().includes(item.path)) {
+      this.selectedPaths.set([item.path]);
+    }
+    
+    this.contextMenuX.set(event.clientX);
+    this.contextMenuY.set(event.clientY);
+    this.isContextMenuOpen.set(true);
+  }
+
+  closeContextMenu(): void {
+    this.isContextMenuOpen.set(false);
+  }
+
+  onModalConfirm(value: string): void {
+    this.pendingModalAction?.(value);
+    this.pendingModalAction = null;
+    this.activeModal.set(null);
+  }
+
+  onModalCancel(): void {
+    this.pendingModalAction = null;
+    this.activeModal.set(null);
+  }
+
+  handleContextMenuAction(action: ContextMenuAction): void {
+    switch (action) {
+      case 'rename':
+        this.renameSelected();
+        break;
+      case 'move':
+        this.moveSelected();
+        break;
+      case 'copy':
+        this.copySelected();
+        break;
+      case 'delete':
+        this.deleteSelected();
+        break;
+      case 'download':
+        this.downloadSelected();
+        break;
+      case 'info':
+        this.showInfoSelected();
+        break;
+    }
   }
 
   private loadItems(): void {
@@ -810,8 +922,8 @@ export class ExplorerPage {
     const segments = path.split('/').filter((s) => s.length > 0);
     const ancestors: string[] = [];
     let accumulated = '';
-    for (let i = 0; i < segments.length; i++) {
-      accumulated += '/' + segments[i];
+    for (const segment of segments) {
+      accumulated += '/' + segment;
       // Include the path itself so it gets expanded too (useful when navigating to a dir)
       ancestors.push(accumulated);
     }
@@ -822,12 +934,54 @@ export class ExplorerPage {
     this.expandedTreePaths.set(merged);
     this.persistState();
 
-    // Lazy-load children for ancestors that exist in the tree but haven't been fetched yet
-    for (const ancestor of ancestors) {
-      const node = this.findTreeNode(this.treeNodes(), ancestor);
-      if (node && node.has_children && (!node.children || node.children.length === 0)) {
-        this.loadTreeChildren(ancestor);
-      }
+    // Load missing children sequentially (sorted by depth) so that parent nodes are
+    // fetched before their children, avoiding "node not found" failures on deep paths.
+    this.reloadExpandedChildren();
+  }
+
+  /**
+   * For every path in `expandedTreePaths` whose node exists in the tree but has no
+   * loaded children yet, fetch those children.  Paths are processed depth-first so a
+   * parent is always fetched before we try to find its children.
+   */
+  private reloadExpandedChildren(): void {
+    const expandedPaths = this.expandedTreePaths();
+    if (expandedPaths.length === 0) {
+      return;
+    }
+
+    // Sort shallowest first so parents are available when children are looked up
+    const sorted = [...expandedPaths].sort(
+      (a, b) => a.split('/').filter(Boolean).length - b.split('/').filter(Boolean).length
+    );
+
+    this.loadChildrenSequentially(sorted);
+  }
+
+  /**
+   * Walk the list one-by-one, awaiting each API response before moving to the next,
+   * so that a newly loaded parent's children are already in `treeNodes` when we try
+   * to locate deeper descendants.
+   */
+  private loadChildrenSequentially(paths: string[]): void {
+    if (paths.length === 0) {
+      return;
+    }
+
+    const [current, ...remaining] = paths;
+    const node = this.findTreeNode(this.treeNodes(), current);
+
+    if (node && node.has_children && (!node.children || node.children.length === 0)) {
+      this.explorerApi.tree({ path: current, depth: 1, include_files: false, limit: 200 }).subscribe({
+        next: (result) => {
+          const merged = this.attachChildren(this.treeNodes(), current, result.data.nodes);
+          this.treeNodes.set(merged);
+          this.loadChildrenSequentially(remaining);
+        },
+        error: () => this.loadChildrenSequentially(remaining),
+      });
+    } else {
+      this.loadChildrenSequentially(remaining);
     }
   }
 
@@ -846,14 +1000,17 @@ export class ExplorerPage {
     return null;
   }
 
+  private openModal(config: ActiveModalConfig, action: (value: string) => void): void {
+    this.pendingModalAction = action;
+    this.activeModal.set(config);
+  }
+
   private persistState(): void {
     const state: ExplorerUiState = {
       currentPath: this.currentPath(),
       page: this.page(),
       limit: this.limit(),
       searchFilters: this.searchFilters(),
-      createDirectoryName: this.createDirectoryName(),
-      uploadConflictPolicy: this.uploadConflictPolicy(),
       pathHistory: this.pathHistory(),
       expandedTreePaths: this.expandedTreePaths(),
     };
@@ -873,8 +1030,6 @@ export class ExplorerPage {
       this.page.set(state.page || 1);
       this.limit.set(state.limit || 50);
       this.searchFilters.set(state.searchFilters ?? null);
-      this.createDirectoryName.set(state.createDirectoryName ?? '');
-      this.uploadConflictPolicy.set(state.uploadConflictPolicy ?? 'rename');
       this.pathHistory.set(Array.isArray(state.pathHistory) ? state.pathHistory : []);
       this.expandedTreePaths.set(Array.isArray(state.expandedTreePaths) ? state.expandedTreePaths : []);
     } catch {

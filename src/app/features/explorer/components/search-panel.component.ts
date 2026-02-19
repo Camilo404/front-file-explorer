@@ -12,30 +12,45 @@ export interface SearchFilters {
   imports: [ReactiveFormsModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <form class="grid gap-2 rounded border border-slate-800 bg-slate-900 p-3 md:grid-cols-6" [formGroup]="form" (ngSubmit)="onSearch()">
-      <input
-        type="text"
-        formControlName="q"
-        placeholder="Buscar..."
-        class="rounded border border-slate-700 bg-slate-950 px-3 py-2 md:col-span-3"
-      />
+    <form class="flex flex-col gap-3 sm:flex-row sm:items-center" [formGroup]="form" (ngSubmit)="onSearch()">
+      <div class="relative flex-1">
+        <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"></i>
+        <input
+          type="text"
+          formControlName="q"
+          placeholder="Buscar archivos o carpetas..."
+          class="w-full rounded-lg border border-white/10 bg-white/5 py-2 pl-10 pr-4 text-sm text-slate-200 placeholder-slate-400 transition-colors focus:border-sky-500/50 focus:bg-white/10 focus:outline-none focus:ring-1 focus:ring-sky-500/50"
+        />
+      </div>
 
-      <select formControlName="type" class="rounded border border-slate-700 bg-slate-950 px-3 py-2">
-        <option value="">Tipo</option>
-        <option value="file">Archivo</option>
-        <option value="dir">Directorio</option>
-      </select>
+      <div class="flex gap-2 sm:w-auto">
+        <div class="relative w-32">
+          <i class="fa-solid fa-filter absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"></i>
+          <select formControlName="type" class="w-full appearance-none rounded-lg border border-white/10 bg-white/5 py-2 pl-9 pr-8 text-sm text-slate-200 transition-colors focus:border-sky-500/50 focus:bg-white/10 focus:outline-none focus:ring-1 focus:ring-sky-500/50">
+            <option value="" class="bg-slate-800">Cualquiera</option>
+            <option value="file" class="bg-slate-800">Archivo</option>
+            <option value="dir" class="bg-slate-800">Carpeta</option>
+          </select>
+          <i class="fa-solid fa-chevron-down absolute right-3 top-1/2 -translate-y-1/2 text-xs text-slate-400 pointer-events-none"></i>
+        </div>
 
-      <input
-        type="text"
-        formControlName="ext"
-        placeholder="Ext (.txt)"
-        class="rounded border border-slate-700 bg-slate-950 px-3 py-2"
-      />
+        <div class="relative w-24">
+          <input
+            type="text"
+            formControlName="ext"
+            placeholder=".ext"
+            class="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-slate-200 placeholder-slate-400 transition-colors focus:border-sky-500/50 focus:bg-white/10 focus:outline-none focus:ring-1 focus:ring-sky-500/50"
+          />
+        </div>
+      </div>
 
-      <div class="flex gap-2">
-        <button type="submit" class="w-full rounded bg-blue-600 px-3 py-2 text-sm hover:bg-blue-500">Buscar</button>
-        <button type="button" class="w-full rounded bg-slate-700 px-3 py-2 text-sm hover:bg-slate-600" (click)="clear()">Limpiar</button>
+      <div class="flex gap-2 sm:w-auto">
+        <button type="submit" class="flex items-center justify-center gap-2 rounded-lg bg-sky-500 px-4 py-2 text-sm font-medium text-white transition-all hover:bg-sky-400 active:scale-95">
+          Buscar
+        </button>
+        <button type="button" class="flex items-center justify-center gap-2 rounded-lg border border-white/10 bg-white/5 px-4 py-2 text-sm font-medium text-slate-300 transition-all hover:bg-white/10 hover:text-white active:scale-95" (click)="clear()">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
       </div>
     </form>
   `,

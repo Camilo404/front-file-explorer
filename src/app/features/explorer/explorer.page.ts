@@ -75,8 +75,9 @@ interface BreadcrumbItem {
         />
       </nav>
 
-      <div class="grid gap-3 lg:grid-cols-[320px_1fr]">
+      <div class="grid gap-3 lg:grid-cols-[320px_1fr] items-start">
         <app-tree-panel
+          class="h-[calc(100vh-11rem)] sticky top-24 min-w-0"
           [nodes]="treeNodes()"
           [currentPath]="currentPath()"
           [expandedPaths]="expandedTreePaths()"
@@ -85,8 +86,9 @@ interface BreadcrumbItem {
           (expandedPathsChange)="onExpandedPathsChange($event)"
         />
 
-        <div class="flex flex-col gap-3">
+        <div class="flex flex-col gap-3 h-[calc(100vh-11rem)] min-w-0">
           <app-file-list
+            class="h-full"
             [items]="items()"
             [selectedPaths]="selectedPaths()"
             [thumbnailUrls]="thumbnailUrls()"
@@ -94,8 +96,12 @@ interface BreadcrumbItem {
             [totalPages]="totalPages()"
             [totalItems]="totalItems()"
             [isSearchMode]="searchFilters() !== null"
+            [parentPath]="parentPath()"
             (open)="openItem($event)"
-            (toggleSelection)="toggleSelection($event)"
+            (selectionChange)="selectedPaths.set($event)"
+            (navigateToParent)="goParentFolder()"
+            (moveItems)="handleMoveItems($event)"
+            (uploadFiles)="uploadFiles($event)"
             (info)="showItemInfo($event)"
             (contextMenu)="openContextMenu($event)"
             (search)="runSearch($event)"
@@ -191,6 +197,11 @@ export class ExplorerPage {
   readonly contextMenuY = signal(0);
 
   readonly selectedCount = computed(() => this.selectedPaths().length);
+  readonly parentPath = computed<string | null>(() => {
+    const p = this.currentPath();
+    if (p === '/' || !p.trim()) return null;
+    return this.getParentPath(p);
+  });
   readonly canShowPreviousImage = computed(
     () => this.isImageViewerOpen() && this.viewerImageIndex() > 0 && this.viewerImagePaths().length > 1
   );
@@ -317,12 +328,6 @@ export class ExplorerPage {
       },
       error: () => {},
     });
-  }
-
-  toggleSelection(path: string): void {
-    this.selectedPaths.update((current) =>
-      current.includes(path) ? current.filter((value) => value !== path) : [...current, path]
-    );
   }
 
   runSearch(filters: SearchFilters): void {
@@ -636,6 +641,20 @@ export class ExplorerPage {
     }
 
     this.loadViewerImageByIndex(nextIndex);
+  }
+
+  handleMoveItems(event: { sources: string[]; destination: string }): void {
+    this.operationsApi.move(event.sources, event.destination, 'rename').subscribe({
+      next: () => {
+        this.selectedPaths.set([]);
+        this.feedback.info('MOVE', `${event.sources.length} elemento(s) movido(s) correctamente.`);
+        this.refresh();
+      },
+      error: (err: unknown) => {
+        const msg = err instanceof Error ? err.message : 'Error al mover elementos.';
+        this.feedback.error('MOVE', msg);
+      },
+    });
   }
 
   openContextMenu(eventData: { event: MouseEvent; item: FileItem }): void {

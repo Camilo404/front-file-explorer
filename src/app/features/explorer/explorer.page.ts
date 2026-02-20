@@ -49,32 +49,35 @@ interface BreadcrumbItem {
     '(document:click)': 'closeContextMenu()',
   },
   template: `
-    <section class="space-y-3">
-      <nav class="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-white/10 bg-slate-900/50 px-4 py-3 text-sm shadow-2xl backdrop-blur-xl">
-        <div class="flex flex-wrap items-center gap-1">
+    <section class="space-y-4 p-2 sm:p-4">
+      <nav class="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-white/5 bg-zinc-900/40 px-5 py-3.5 text-sm shadow-xl backdrop-blur-2xl ring-1 ring-white/5">
+        <div class="flex flex-wrap items-center gap-1.5">
           <!-- Tree toggle: only visible on mobile -->
           <button
             type="button"
-            class="lg:hidden flex items-center justify-center size-8 rounded-lg text-slate-300 transition-all hover:bg-white/10 hover:text-white mr-1"
+            class="lg:hidden flex items-center justify-center size-9 rounded-xl text-zinc-400 transition-all hover:bg-white/10 hover:text-white mr-2"
             aria-label="Mostrar árbol de directorios"
             (click)="isMobileTreeOpen.set(!isMobileTreeOpen())"
           >
-            <i class="fa-solid fa-folder-tree text-sky-400"></i>
+            <i class="fa-solid fa-folder-tree text-violet-400"></i>
           </button>
-          <i class="fa-solid fa-house text-sky-400 mr-2"></i>
+          <div class="flex items-center justify-center size-8 rounded-lg bg-violet-500/10 mr-3">
+            <i class="fa-solid fa-house text-violet-400"></i>
+          </div>
           @for (crumb of breadcrumbs(); track crumb.path) {
             <button
               type="button"
-              class="rounded-lg px-3 py-1.5 font-medium transition-all hover:bg-white/10 hover:text-white"
-              [class.bg-sky-500/20]="crumb.path === currentPath()"
-              [class.text-sky-400]="crumb.path === currentPath()"
-              [class.text-slate-400]="crumb.path !== currentPath()"
+              class="rounded-xl px-3.5 py-1.5 font-medium transition-all hover:bg-white/10 hover:text-white"
+              [class.bg-violet-500/20]="crumb.path === currentPath()"
+              [class.text-violet-300]="crumb.path === currentPath()"
+              [class.shadow-sm]="crumb.path === currentPath()"
+              [class.text-zinc-400]="crumb.path !== currentPath()"
               (click)="navigateTo(crumb.path)"
             >
               {{ crumb.label }}
             </button>
             @if (!$last) {
-              <i class="fa-solid fa-chevron-right text-xs text-slate-600 mx-1"></i>
+              <i class="fa-solid fa-chevron-right text-[10px] text-zinc-600 mx-1"></i>
             }
           }
         </div>
@@ -94,7 +97,7 @@ interface BreadcrumbItem {
         ></div>
       }
 
-      <div class="grid gap-3 lg:grid-cols-[320px_1fr] items-start">
+      <div class="grid gap-3 lg:grid-cols-[320px_1fr]">
         <!-- Tree panel: fixed drawer on mobile, in-grid on desktop -->
         <div
           class="fixed top-16 bottom-0 left-0 z-50 w-72 transition-transform duration-300 ease-in-out
@@ -102,7 +105,7 @@ interface BreadcrumbItem {
           [class.-translate-x-full]="!isMobileTreeOpen()"
         >
           <app-tree-panel
-            class="h-full lg:h-[calc(100vh-11rem)] lg:sticky lg:top-24 min-w-0"
+            class="h-full min-w-0"
             [closeable]="true"
             [nodes]="treeNodes()"
             [currentPath]="currentPath()"
@@ -114,7 +117,7 @@ interface BreadcrumbItem {
           />
         </div>
 
-        <div class="flex flex-col gap-3 h-[calc(100vh-11rem)] min-w-0">
+        <div class="flex flex-col gap-3 h-[calc(100vh-20rem)] min-w-0">
           <app-file-list
             class="h-full"
             [items]="items()"
@@ -904,7 +907,7 @@ export class ExplorerPage {
         continue;
       }
 
-      this.filesApi.thumbnail(item.path, 64).subscribe({
+      this.filesApi.thumbnail(item.path, 512).subscribe({
         next: (blob) => {
           if (blob.size === 0) {
             this.filesApi.preview(item.path).subscribe({

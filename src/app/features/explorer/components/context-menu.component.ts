@@ -19,8 +19,8 @@ export type ContextMenuAction = 'rename' | 'move' | 'copy' | 'delete' | 'downloa
 
       <div
         [class]="isMobile()
-          ? 'fixed inset-x-0 bottom-0 z-50 overflow-hidden rounded-t-2xl border-t border-white/10 bg-slate-900/95 p-2 pb-6 text-sm text-slate-200 shadow-2xl backdrop-blur-xl'
-          : 'fixed z-50 min-w-48 overflow-hidden rounded-xl border border-white/10 bg-slate-900/80 p-1.5 text-sm text-slate-200 shadow-2xl backdrop-blur-xl'"
+          ? 'fixed inset-x-0 bottom-0 z-50 overflow-hidden rounded-t-3xl border-t border-white/5 bg-zinc-950/95 p-3 pb-8 text-sm text-zinc-200 shadow-2xl backdrop-blur-2xl ring-1 ring-white/5'
+          : 'fixed z-50 min-w-48 overflow-hidden rounded-2xl border border-white/5 bg-zinc-900/80 p-2 text-sm text-zinc-200 shadow-2xl backdrop-blur-2xl ring-1 ring-white/5'"
         [style.left]="isMobile() ? null : clampedX() + 'px'"
         [style.top]="isMobile() ? null : clampedY() + 'px'"
         (click)="$event.stopPropagation()"
@@ -31,38 +31,38 @@ export type ContextMenuAction = 'rename' | 'move' | 'copy' | 'delete' | 'downloa
             <div class="h-1 w-10 rounded-full bg-white/20"></div>
           </div>
         }
-        <div class="px-2 py-1.5 text-xs font-medium text-slate-400">
+        <div class="px-2 py-1.5 text-xs font-medium text-zinc-400">
           {{ selectedCount() }} seleccionado{{ selectedCount() !== 1 ? 's' : '' }}
         </div>
         <div class="my-1 h-px bg-white/10"></div>
         
         <button
           type="button"
-          class="flex w-full items-center gap-2.5 rounded-lg px-2 py-1.5 text-left transition-colors hover:bg-white/10 hover:text-white disabled:opacity-50 disabled:hover:bg-transparent disabled:hover:text-slate-200"
+          class="flex w-full items-center gap-2.5 rounded-lg px-2 py-1.5 text-left transition-colors hover:bg-white/10 hover:text-white disabled:opacity-50 disabled:hover:bg-transparent disabled:hover:text-zinc-200"
           [disabled]="selectedCount() !== 1"
           (click)="onAction('rename')"
         >
-          <i class="fa-solid fa-pen-to-square fa-fw text-slate-400"></i>
+          <i class="fa-solid fa-pen-to-square fa-fw text-zinc-400"></i>
           Renombrar
         </button>
 
         <button
           type="button"
-          class="flex w-full items-center gap-2.5 rounded-lg px-2 py-1.5 text-left transition-colors hover:bg-white/10 hover:text-white disabled:opacity-50 disabled:hover:bg-transparent disabled:hover:text-slate-200"
+          class="flex w-full items-center gap-2.5 rounded-lg px-2 py-1.5 text-left transition-colors hover:bg-white/10 hover:text-white disabled:opacity-50 disabled:hover:bg-transparent disabled:hover:text-zinc-200"
           [disabled]="selectedCount() === 0"
           (click)="onAction('move')"
         >
-          <i class="fa-solid fa-arrow-right-to-bracket fa-fw text-slate-400"></i>
+          <i class="fa-solid fa-arrow-right-to-bracket fa-fw text-zinc-400"></i>
           Mover
         </button>
 
         <button
           type="button"
-          class="flex w-full items-center gap-2.5 rounded-lg px-2 py-1.5 text-left transition-colors hover:bg-white/10 hover:text-white disabled:opacity-50 disabled:hover:bg-transparent disabled:hover:text-slate-200"
+          class="flex w-full items-center gap-2.5 rounded-lg px-2 py-1.5 text-left transition-colors hover:bg-white/10 hover:text-white disabled:opacity-50 disabled:hover:bg-transparent disabled:hover:text-zinc-200"
           [disabled]="selectedCount() === 0"
           (click)="onAction('copy')"
         >
-          <i class="fa-solid fa-copy fa-fw text-slate-400"></i>
+          <i class="fa-solid fa-copy fa-fw text-zinc-400"></i>
           Copiar
         </button>
 
@@ -70,21 +70,21 @@ export type ContextMenuAction = 'rename' | 'move' | 'copy' | 'delete' | 'downloa
 
         <button
           type="button"
-          class="flex w-full items-center gap-2.5 rounded-lg px-2 py-1.5 text-left transition-colors hover:bg-white/10 hover:text-white disabled:opacity-50 disabled:hover:bg-transparent disabled:hover:text-slate-200"
+          class="flex w-full items-center gap-2.5 rounded-lg px-2 py-1.5 text-left transition-colors hover:bg-white/10 hover:text-white disabled:opacity-50 disabled:hover:bg-transparent disabled:hover:text-zinc-200"
           [disabled]="selectedCount() !== 1"
           (click)="onAction('download')"
         >
-          <i class="fa-solid fa-download fa-fw text-slate-400"></i>
+          <i class="fa-solid fa-download fa-fw text-zinc-400"></i>
           Descargar
         </button>
 
         <button
           type="button"
-          class="flex w-full items-center gap-2.5 rounded-lg px-2 py-1.5 text-left transition-colors hover:bg-white/10 hover:text-white disabled:opacity-50 disabled:hover:bg-transparent disabled:hover:text-slate-200"
+          class="flex w-full items-center gap-2.5 rounded-lg px-2 py-1.5 text-left transition-colors hover:bg-white/10 hover:text-white disabled:opacity-50 disabled:hover:bg-transparent disabled:hover:text-zinc-200"
           [disabled]="selectedCount() !== 1"
           (click)="onAction('info')"
         >
-          <i class="fa-solid fa-circle-info fa-fw text-slate-400"></i>
+          <i class="fa-solid fa-circle-info fa-fw text-zinc-400"></i>
           Información
         </button>
 

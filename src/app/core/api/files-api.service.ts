@@ -42,7 +42,7 @@ export class FilesApiService {
     return this.http.get('/api/v1/files/preview', { params, responseType: 'blob' });
   }
 
-  thumbnail(path: string, size = 256): Observable<Blob> {
+  thumbnail(path: string, size = 512): Observable<Blob> {
     const params = new HttpParams().set('path', path).set('size', size);
     return this.http.get('/api/v1/files/thumbnail', { params, responseType: 'blob' });
   }

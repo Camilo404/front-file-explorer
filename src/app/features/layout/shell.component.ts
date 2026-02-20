@@ -49,16 +49,16 @@ import { ErrorStoreService } from '../../core/errors/error-store.service';
     .bar-bot-open    { transform: translateY(-6px) rotate(-45deg); }
   `,
   template: `
-    <div class="min-h-screen bg-slate-900 text-slate-200 font-sans selection:bg-indigo-500/30">
+    <div class="min-h-screen bg-zinc-950 text-zinc-200 font-sans selection:bg-violet-500/30">
 
       <!-- ═══════════════════════════════ HEADER ═══════════════════════════════ -->
-      <header class="sticky top-0 z-40 w-full backdrop-blur-md flex-none border-b border-slate-800/60 bg-slate-900/80">
-        <div class="mx-auto max-w-400 px-4 sm:px-6 lg:px-8">
+      <header class="sticky top-4 z-40 mx-auto w-[calc(100%-2rem)] max-w-[1600px] rounded-2xl border border-white/10 bg-zinc-950/80 backdrop-blur-md shadow-2xl shadow-black/50">
+        <div class="px-4 sm:px-6 lg:px-8">
           <div class="flex h-16 items-center justify-between">
 
             <!-- Logo -->
             <div class="flex items-center gap-2.5">
-              <div class="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-600 text-white shadow-lg shadow-indigo-500/30">
+              <div class="flex h-8 w-8 items-center justify-center rounded-lg bg-violet-600 text-white shadow-lg shadow-violet-500/30">
                 <i class="fa-solid fa-folder-open text-sm"></i>
               </div>
               <span class="text-lg font-semibold tracking-tight text-white hidden sm:block">FileExplorer</span>
@@ -66,19 +66,19 @@ import { ErrorStoreService } from '../../core/errors/error-store.service';
 
             <!-- Desktop Nav -->
             <nav class="hidden md:flex items-center gap-1 text-sm font-medium">
-              <a routerLink="/explorer" routerLinkActive="bg-slate-800 text-white" class="flex items-center gap-2 rounded-md px-3 py-2 text-slate-300 hover:bg-slate-800 hover:text-white transition-colors">
+              <a routerLink="/explorer" routerLinkActive="bg-white/10 text-white shadow-sm" class="flex items-center gap-2 rounded-md px-3 py-2 text-zinc-300 hover:bg-white/5 hover:text-white transition-colors">
                 <i class="fa-solid fa-folder-open text-xs"></i>Explorer
               </a>
               @if (canManageFiles()) {
-                <a routerLink="/jobs" routerLinkActive="bg-slate-800 text-white" class="flex items-center gap-2 rounded-md px-3 py-2 text-slate-300 hover:bg-slate-800 hover:text-white transition-colors">
+                <a routerLink="/jobs" routerLinkActive="bg-white/10 text-white shadow-sm" class="flex items-center gap-2 rounded-md px-3 py-2 text-zinc-300 hover:bg-white/5 hover:text-white transition-colors">
                   <i class="fa-solid fa-list-check text-xs"></i>Jobs
                 </a>
-                <a routerLink="/trash" routerLinkActive="bg-slate-800 text-white" class="flex items-center gap-2 rounded-md px-3 py-2 text-slate-300 hover:bg-slate-800 hover:text-white transition-colors">
+                <a routerLink="/trash" routerLinkActive="bg-white/10 text-white shadow-sm" class="flex items-center gap-2 rounded-md px-3 py-2 text-zinc-300 hover:bg-white/5 hover:text-white transition-colors">
                   <i class="fa-solid fa-trash text-xs"></i>Trash
                 </a>
               }
               @if (isAdmin()) {
-                <a routerLink="/audit" routerLinkActive="bg-slate-800 text-white" class="flex items-center gap-2 rounded-md px-3 py-2 text-slate-300 hover:bg-slate-800 hover:text-white transition-colors">
+                <a routerLink="/audit" routerLinkActive="bg-white/10 text-white shadow-sm" class="flex items-center gap-2 rounded-md px-3 py-2 text-zinc-300 hover:bg-white/5 hover:text-white transition-colors">
                   <i class="fa-solid fa-clipboard-list text-xs"></i>Audit
                 </a>
               }
@@ -87,16 +87,16 @@ import { ErrorStoreService } from '../../core/errors/error-store.service';
             <!-- Right side actions -->
             <div class="flex items-center gap-3">
               <!-- Health pill (desktop) -->
-              <div class="hidden sm:flex items-center gap-2 px-3 py-1 rounded-full bg-slate-800/50 border border-slate-700/50">
+              <div class="hidden sm:flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 border border-white/10">
                 <div class="h-2 w-2 rounded-full" [class.bg-emerald-400]="healthStatus() === 'API: ok'" [class.bg-rose-500]="healthStatus() !== 'API: ok'"></div>
-                <span class="text-xs font-medium text-slate-400">{{ healthStatus() }}</span>
+                <span class="text-xs font-medium text-zinc-400">{{ healthStatus() }}</span>
               </div>
 
               <!-- New User button (desktop, admin only) -->
               @if (isAdmin()) {
                 <button
                   type="button"
-                  class="hidden md:inline-flex items-center justify-center rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-offset-2 focus-visible:outline-indigo-600 transition-all"
+                  class="hidden md:inline-flex items-center justify-center rounded-md bg-violet-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-violet-500 focus-visible:outline focus-visible:outline-offset-2 focus-visible:outline-violet-600 transition-all"
                   (click)="toggleRegisterUserForm()"
                 >
                   <i class="fa-solid fa-user-plus mr-1.5 text-xs"></i>
@@ -105,14 +105,14 @@ import { ErrorStoreService } from '../../core/errors/error-store.service';
               }
 
               <!-- Desktop profile + logout -->
-              <div class="hidden md:flex items-center gap-3 pl-3 border-l border-slate-700">
+              <div class="hidden md:flex items-center gap-3 pl-3 border-l border-zinc-700">
                 <div class="flex flex-col items-end">
                   <span class="text-sm font-medium text-white leading-none">{{ username() }}</span>
-                  <span class="text-xs text-slate-400 capitalize mt-0.5">{{ role() }}</span>
+                  <span class="text-xs text-zinc-400 capitalize mt-0.5">{{ role() }}</span>
                 </div>
                 <button
                   type="button"
-                  class="rounded-full p-1.5 text-slate-400 hover:bg-slate-800 hover:text-white transition-colors"
+                  class="rounded-full p-1.5 text-zinc-400 hover:bg-white/5 hover:text-white transition-colors"
                   title="Logout"
                   (click)="onLogout()"
                 >
@@ -123,7 +123,7 @@ import { ErrorStoreService } from '../../core/errors/error-store.service';
               <!-- ── MOBILE hamburger ── -->
               <button
                 type="button"
-                class="md:hidden flex flex-col items-center justify-center gap-1.25 w-10 h-10 rounded-xl text-slate-300 hover:text-white hover:bg-slate-800 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
+                class="md:hidden flex flex-col items-center justify-center gap-1.25 w-10 h-10 rounded-xl text-zinc-300 hover:text-white hover:bg-white/5 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500"
                 aria-label="Toggle menu"
                 [attr.aria-expanded]="mobileMenuOpen()"
                 (click)="toggleMobileMenu()"
@@ -138,36 +138,36 @@ import { ErrorStoreService } from '../../core/errors/error-store.service';
 
         <!-- Register Form Panel (desktop) -->
         @if (isAdmin() && showRegisterForm()) {
-          <div class="absolute right-4 top-16 mt-2 w-full max-w-sm rounded-xl border border-slate-700 bg-slate-800 p-5 shadow-2xl shadow-black/50 ring-1 ring-white/10 z-50">
+          <div class="absolute right-4 top-16 mt-2 w-full max-w-sm rounded-xl border border-white/10 bg-zinc-900/90 backdrop-blur-xl p-5 shadow-2xl shadow-black/50 ring-1 ring-white/10 z-50">
             <div class="mb-4 flex items-center justify-between">
               <h3 class="text-sm font-semibold text-white">Create New User</h3>
-              <button type="button" class="text-slate-400 hover:text-white transition-colors" (click)="toggleRegisterUserForm()">
+              <button type="button" class="text-zinc-400 hover:text-white transition-colors" (click)="toggleRegisterUserForm()">
                 <i class="fa-solid fa-xmark text-lg"></i>
               </button>
             </div>
             <form class="grid gap-4" [formGroup]="registerForm" (ngSubmit)="submitRegisterUser()">
               <div>
-                <label class="mb-1.5 block text-xs font-medium text-slate-400">Username</label>
+                <label class="mb-1.5 block text-xs font-medium text-zinc-400">Username</label>
                 <input type="text" formControlName="username" placeholder="Enter username"
-                  class="w-full rounded-lg border border-slate-600 bg-slate-900/50 px-3 py-2 text-sm text-white placeholder-slate-500 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 transition-shadow" />
+                  class="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white placeholder-zinc-500 focus:border-violet-500 focus:outline-none focus:ring-1 focus:ring-violet-500 transition-shadow" />
               </div>
               <div>
-                <label class="mb-1.5 block text-xs font-medium text-slate-400">Password</label>
+                <label class="mb-1.5 block text-xs font-medium text-zinc-400">Password</label>
                 <input type="password" formControlName="password" placeholder="Enter password"
-                  class="w-full rounded-lg border border-slate-600 bg-slate-900/50 px-3 py-2 text-sm text-white placeholder-slate-500 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 transition-shadow" />
+                  class="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white placeholder-zinc-500 focus:border-violet-500 focus:outline-none focus:ring-1 focus:ring-violet-500 transition-shadow" />
               </div>
               <div>
-                <label class="mb-1.5 block text-xs font-medium text-slate-400">Role</label>
+                <label class="mb-1.5 block text-xs font-medium text-zinc-400">Role</label>
                 <select formControlName="role"
-                  class="w-full rounded-lg border border-slate-600 bg-slate-900/50 px-3 py-2 text-sm text-white focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 transition-shadow">
+                  class="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white focus:border-violet-500 focus:outline-none focus:ring-1 focus:ring-violet-500 transition-shadow">
                   <option value="viewer">Viewer</option>
                   <option value="editor">Editor</option>
                   <option value="admin">Admin</option>
                 </select>
               </div>
               <div class="mt-2 flex gap-3">
-                <button type="button" class="flex-1 rounded-lg bg-slate-700 px-3 py-2 text-sm font-semibold text-white hover:bg-slate-600 transition-colors" (click)="toggleRegisterUserForm()">Cancel</button>
-                <button type="submit" class="flex-1 rounded-lg bg-indigo-600 px-3 py-2 text-sm font-semibold text-white hover:bg-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors" [disabled]="registerForm.invalid">Create User</button>
+                <button type="button" class="flex-1 rounded-lg bg-white/10 px-3 py-2 text-sm font-semibold text-white hover:bg-white/20 transition-colors" (click)="toggleRegisterUserForm()">Cancel</button>
+                <button type="submit" class="flex-1 rounded-lg bg-violet-600 px-3 py-2 text-sm font-semibold text-white hover:bg-violet-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors" [disabled]="registerForm.invalid">Create User</button>
               </div>
             </form>
           </div>
@@ -188,21 +188,21 @@ import { ErrorStoreService } from '../../core/errors/error-store.service';
           role="dialog"
           aria-modal="true"
           aria-label="Navigation menu"
-          class="md:hidden fixed bottom-0 left-0 right-0 z-50 rounded-t-3xl bg-slate-900 border-t border-slate-700/60 shadow-2xl shadow-black/70 sheet-enter pb-safe"
+          class="md:hidden fixed bottom-0 left-0 right-0 z-50 rounded-t-3xl bg-zinc-950/90 backdrop-blur-2xl border-t border-white/10 shadow-2xl shadow-black/70 sheet-enter pb-safe"
         >
           <!-- Handle bar -->
           <div class="flex justify-center pt-3 pb-1">
-            <div class="w-10 h-1 rounded-full bg-slate-600"></div>
+            <div class="w-10 h-1 rounded-full bg-white/20"></div>
           </div>
 
           <!-- Profile card -->
-          <div class="mx-4 mt-3 mb-4 flex items-center gap-3 rounded-2xl bg-slate-800/70 border border-slate-700/50 px-4 py-3">
-            <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-linear-to-br from-indigo-500 to-violet-600 text-white font-bold text-sm shadow-lg shadow-indigo-500/30 uppercase">
+          <div class="mx-4 mt-3 mb-4 flex items-center gap-3 rounded-2xl bg-white/5 border border-white/10 px-4 py-3">
+            <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-linear-to-br from-violet-500 to-violet-600 text-white font-bold text-sm shadow-lg shadow-violet-500/30 uppercase">
               {{ username().charAt(0) }}
             </div>
             <div class="flex-1 min-w-0">
               <p class="text-sm font-semibold text-white truncate">{{ username() }}</p>
-              <p class="text-xs text-slate-400 capitalize">{{ role() }}</p>
+              <p class="text-xs text-zinc-400 capitalize">{{ role() }}</p>
             </div>
             <!-- Health pill -->
             <div class="flex items-center gap-1.5 px-2.5 py-1 rounded-full border"
@@ -230,19 +230,19 @@ import { ErrorStoreService } from '../../core/errors/error-store.service';
               routerLink="/explorer"
               routerLinkActive #explorerActive="routerLinkActive"
               class="nav-item-1 flex items-center gap-3 rounded-2xl px-4 py-3.5 transition-all duration-150 active:scale-95"
-              [class.bg-indigo-600]="explorerActive.isActive"
+              [class.bg-violet-600]="explorerActive.isActive"
               [class.shadow-lg]="explorerActive.isActive"
-              [class.shadow-indigo-500]="explorerActive.isActive"
+              [class.shadow-violet-500]="explorerActive.isActive"
               [class.text-white]="explorerActive.isActive"
-              [class.bg-slate-800]="!explorerActive.isActive"
-              [class.text-slate-300]="!explorerActive.isActive"
-              [class.hover:bg-slate-700]="!explorerActive.isActive"
+              [class.bg-white/5]="!explorerActive.isActive"
+              [class.text-zinc-300]="!explorerActive.isActive"
+              [class.hover:bg-white/10]="!explorerActive.isActive"
               (click)="closeMobileMenu()"
             >
               <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl"
                 [class.bg-white]="explorerActive.isActive"
-                [class.bg-slate-700]="!explorerActive.isActive">
-                <i class="fa-solid fa-folder-open text-base" [class.text-indigo-600]="explorerActive.isActive"></i>
+                [class.bg-white/10]="!explorerActive.isActive">
+                <i class="fa-solid fa-folder-open text-base" [class.text-violet-600]="explorerActive.isActive"></i>
               </span>
               <div class="flex-1">
                 <p class="text-sm font-semibold">Explorer</p>
@@ -262,13 +262,13 @@ import { ErrorStoreService } from '../../core/errors/error-store.service';
                 [class.shadow-lg]="jobsActive.isActive"
                 [class.shadow-violet-500]="jobsActive.isActive"
                 [class.text-white]="jobsActive.isActive"
-                [class.bg-slate-800]="!jobsActive.isActive"
-                [class.text-slate-300]="!jobsActive.isActive"
+                [class.bg-white/5]="!jobsActive.isActive"
+                [class.text-zinc-300]="!jobsActive.isActive"
                 (click)="closeMobileMenu()"
               >
                 <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl"
                   [class.bg-white]="jobsActive.isActive"
-                  [class.bg-slate-700]="!jobsActive.isActive">
+                  [class.bg-white/10]="!jobsActive.isActive">
                   <i class="fa-solid fa-list-check text-base" [class.text-violet-600]="jobsActive.isActive"></i>
                 </span>
                 <div class="flex-1">
@@ -288,13 +288,13 @@ import { ErrorStoreService } from '../../core/errors/error-store.service';
                 [class.shadow-lg]="trashActive.isActive"
                 [class.shadow-rose-500]="trashActive.isActive"
                 [class.text-white]="trashActive.isActive"
-                [class.bg-slate-800]="!trashActive.isActive"
-                [class.text-slate-300]="!trashActive.isActive"
+                [class.bg-white/5]="!trashActive.isActive"
+                [class.text-zinc-300]="!trashActive.isActive"
                 (click)="closeMobileMenu()"
               >
                 <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl"
                   [class.bg-white]="trashActive.isActive"
-                  [class.bg-slate-700]="!trashActive.isActive">
+                  [class.bg-white/10]="!trashActive.isActive">
                   <i class="fa-solid fa-trash text-base" [class.text-rose-600]="trashActive.isActive"></i>
                 </span>
                 <div class="flex-1">
@@ -316,13 +316,13 @@ import { ErrorStoreService } from '../../core/errors/error-store.service';
                 [class.shadow-lg]="auditActive.isActive"
                 [class.shadow-amber-500]="auditActive.isActive"
                 [class.text-white]="auditActive.isActive"
-                [class.bg-slate-800]="!auditActive.isActive"
-                [class.text-slate-300]="!auditActive.isActive"
+                [class.bg-white/5]="!auditActive.isActive"
+                [class.text-zinc-300]="!auditActive.isActive"
                 (click)="closeMobileMenu()"
               >
                 <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl"
                   [class.bg-white]="auditActive.isActive"
-                  [class.bg-slate-700]="!auditActive.isActive">
+                  [class.bg-white/10]="!auditActive.isActive">
                   <i class="fa-solid fa-clipboard-list text-base" [class.text-amber-600]="auditActive.isActive"></i>
                 </span>
                 <div class="flex-1">
@@ -341,11 +341,11 @@ import { ErrorStoreService } from '../../core/errors/error-store.service';
             @if (isAdmin()) {
               <button
                 type="button"
-                class="flex items-center gap-3 rounded-2xl bg-slate-800 px-4 py-3.5 text-slate-300 hover:bg-slate-700 transition-all active:scale-95"
+                class="flex items-center gap-3 rounded-2xl bg-white/5 px-4 py-3.5 text-zinc-300 hover:bg-white/10 transition-all active:scale-95"
                 (click)="openRegisterFromMobile()"
               >
-                <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-indigo-600/20">
-                  <i class="fa-solid fa-user-plus text-base text-indigo-400"></i>
+                <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-violet-600/20">
+                  <i class="fa-solid fa-user-plus text-base text-violet-400"></i>
                 </span>
                 <div class="flex-1 text-left">
                   <p class="text-sm font-semibold">New User</p>
@@ -355,7 +355,7 @@ import { ErrorStoreService } from '../../core/errors/error-store.service';
             }
             <button
               type="button"
-              class="flex items-center gap-3 rounded-2xl bg-slate-800 px-4 py-3.5 text-slate-300 hover:bg-rose-900/40 hover:text-rose-300 transition-all active:scale-95"
+              class="flex items-center gap-3 rounded-2xl bg-white/5 px-4 py-3.5 text-zinc-300 hover:bg-rose-900/40 hover:text-rose-300 transition-all active:scale-95"
               (click)="onLogout()"
             >
               <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-rose-600/20">
@@ -371,7 +371,7 @@ import { ErrorStoreService } from '../../core/errors/error-store.service';
       }
 
       <!-- ══════════════════════════ MAIN CONTENT ══════════════════════════ -->
-      <main class="mx-auto max-w-400 p-4 sm:p-6 lg:p-8">
+      <main class="mx-auto pt-6 w-[calc(100%-1rem)] max-w-[1600px] ">
         <router-outlet />
       </main>
     </div>

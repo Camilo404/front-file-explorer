@@ -25,7 +25,7 @@ import { ConflictPolicy } from '../../core/api/operations-api.service';
 
         <!-- Panel -->
         <div
-          class="relative w-full max-w-md rounded-2xl border border-white/10 bg-slate-900 p-6 shadow-2xl"
+          class="relative w-full max-w-md rounded-2xl border border-white/10 bg-zinc-900 p-6 shadow-2xl"
           (click)="$event.stopPropagation()"
         >
           <div class="mb-4 flex items-start gap-3">
@@ -36,7 +36,7 @@ import { ConflictPolicy } from '../../core/api/operations-api.service';
               <h2 id="conflict-modal-title" class="text-base font-semibold text-white">
                 Conflictos al subir
               </h2>
-              <p class="mt-1 text-sm text-slate-400">
+              <p class="mt-1 text-sm text-zinc-400">
                 {{ conflictingNames().length === 1
                   ? '1 archivo ya existe'
                   : conflictingNames().length + ' archivos ya existen' }}
@@ -47,7 +47,7 @@ import { ConflictPolicy } from '../../core/api/operations-api.service';
 
           <ul class="mb-5 max-h-36 overflow-y-auto rounded-lg border border-white/10 bg-white/5 px-3 py-2 space-y-1">
             @for (name of conflictingNames(); track name) {
-              <li class="flex items-center gap-2 text-xs text-slate-300">
+              <li class="flex items-center gap-2 text-xs text-zinc-300">
                 <i class="fa-solid fa-file-circle-exclamation fa-fw text-amber-400/80"></i>
                 <span class="truncate">{{ name }}</span>
               </li>
@@ -57,21 +57,21 @@ import { ConflictPolicy } from '../../core/api/operations-api.service';
           <div class="flex flex-wrap justify-end gap-2">
             <button
               type="button"
-              class="rounded-lg px-4 py-2 text-sm font-medium text-slate-300 transition-all hover:bg-white/10 hover:text-white"
+              class="rounded-lg px-4 py-2 text-sm font-medium text-zinc-300 transition-all hover:bg-white/10 hover:text-white"
               (click)="cancel.emit()"
             >
               Cancelar
             </button>
             <button
               type="button"
-              class="rounded-lg bg-white/5 px-4 py-2 text-sm font-medium text-slate-300 transition-all hover:bg-white/10 hover:text-white"
+              class="rounded-lg bg-white/5 px-4 py-2 text-sm font-medium text-zinc-300 transition-all hover:bg-white/10 hover:text-white"
               (click)="resolve.emit('skip')"
             >
               Omitir
             </button>
             <button
               type="button"
-              class="rounded-lg bg-sky-500/20 px-4 py-2 text-sm font-medium text-sky-400 transition-all hover:bg-sky-500/30 hover:text-sky-300"
+              class="rounded-lg bg-violet-500/20 px-4 py-2 text-sm font-medium text-violet-400 transition-all hover:bg-violet-500/30 hover:text-violet-300"
               (click)="resolve.emit('rename')"
             >
               Renombrar

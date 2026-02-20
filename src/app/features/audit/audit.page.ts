@@ -11,24 +11,24 @@ import { AuditEntry } from '../../core/models/api.models';
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <section class="space-y-3">
-      <h1 class="text-lg font-semibold">Audit (Admin)</h1>
+      <h1 class="text-2xl font-bold tracking-tight text-zinc-100">Audit (Admin)</h1>
 
-      <form class="grid gap-2 rounded border border-slate-800 bg-slate-900 p-3 md:grid-cols-6" [formGroup]="form" (ngSubmit)="applyFilters()">
-        <input formControlName="action" type="text" placeholder="action" class="rounded border border-slate-700 bg-slate-950 px-3 py-2" />
-        <input formControlName="actor_id" type="text" placeholder="actor_id" class="rounded border border-slate-700 bg-slate-950 px-3 py-2" />
-        <input formControlName="status" type="text" placeholder="status" class="rounded border border-slate-700 bg-slate-950 px-3 py-2" />
-        <input formControlName="path" type="text" placeholder="path" class="rounded border border-slate-700 bg-slate-950 px-3 py-2" />
-        <input formControlName="from" type="text" placeholder="from (ISO)" class="rounded border border-slate-700 bg-slate-950 px-3 py-2" />
-        <button type="submit" class="rounded bg-blue-600 px-3 py-2 text-sm hover:bg-blue-500">Filtrar</button>
+      <form class="grid gap-2 rounded-2xl border border-white/5 bg-zinc-900/40 p-5 shadow-xl backdrop-blur-2xl ring-1 ring-white/5 md:grid-cols-6" [formGroup]="form" (ngSubmit)="applyFilters()">
+        <input formControlName="action" type="text" placeholder="action" class="rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-sm text-zinc-200 placeholder-zinc-500 transition-colors focus:border-violet-500/50 focus:bg-white/10 focus:outline-none focus:ring-1 focus:ring-violet-500/50" />
+        <input formControlName="actor_id" type="text" placeholder="actor_id" class="rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-sm text-zinc-200 placeholder-zinc-500 transition-colors focus:border-violet-500/50 focus:bg-white/10 focus:outline-none focus:ring-1 focus:ring-violet-500/50" />
+        <input formControlName="status" type="text" placeholder="status" class="rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-sm text-zinc-200 placeholder-zinc-500 transition-colors focus:border-violet-500/50 focus:bg-white/10 focus:outline-none focus:ring-1 focus:ring-violet-500/50" />
+        <input formControlName="path" type="text" placeholder="path" class="rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-sm text-zinc-200 placeholder-zinc-500 transition-colors focus:border-violet-500/50 focus:bg-white/10 focus:outline-none focus:ring-1 focus:ring-violet-500/50" />
+        <input formControlName="from" type="text" placeholder="from (ISO)" class="rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-sm text-zinc-200 placeholder-zinc-500 transition-colors focus:border-violet-500/50 focus:bg-white/10 focus:outline-none focus:ring-1 focus:ring-violet-500/50" />
+        <button type="submit" class="rounded-xl bg-violet-600 px-4 py-2.5 text-sm font-semibold text-white transition-all hover:bg-violet-500 hover:shadow-lg hover:shadow-violet-500/25 active:scale-95 ring-1 ring-violet-500/50">Filtrar</button>
       </form>
 
-      <section class="rounded border border-slate-800 bg-slate-900 p-3">
+      <section class="rounded-2xl border border-white/5 bg-zinc-900/40 p-5 shadow-xl backdrop-blur-2xl ring-1 ring-white/5">
         <div class="mb-2 flex items-center justify-between text-xs">
-          <span class="text-slate-400">{{ entries().length }} registros | Página {{ page() }}/{{ totalPages() }} | Total {{ totalItems() }}</span>
+          <span class="text-zinc-400">{{ entries().length }} registros | Página {{ page() }}/{{ totalPages() }} | Total {{ totalItems() }}</span>
           <div class="flex gap-2">
             <button
               type="button"
-              class="rounded bg-slate-700 px-2 py-1 hover:bg-slate-600"
+              class="rounded-lg bg-white/5 px-3 py-1.5 font-medium text-zinc-300 transition-all hover:bg-white/10 hover:text-white disabled:opacity-40 disabled:hover:bg-white/5"
               [disabled]="page() <= 1"
               (click)="changePage(-1)"
             >
@@ -36,7 +36,7 @@ import { AuditEntry } from '../../core/models/api.models';
             </button>
             <button
               type="button"
-              class="rounded bg-slate-700 px-2 py-1 hover:bg-slate-600"
+              class="rounded-lg bg-white/5 px-3 py-1.5 font-medium text-zinc-300 transition-all hover:bg-white/10 hover:text-white disabled:opacity-40 disabled:hover:bg-white/5"
               [disabled]="page() >= totalPages()"
               (click)="changePage(1)"
             >
@@ -47,7 +47,7 @@ import { AuditEntry } from '../../core/models/api.models';
         <div class="overflow-auto">
           <table class="w-full text-left text-xs">
             <thead>
-              <tr class="border-b border-slate-800">
+              <tr class="border-b border-zinc-800">
                 <th class="px-2 py-1">Time</th>
                 <th class="px-2 py-1">Action</th>
                 <th class="px-2 py-1">User</th>
@@ -57,7 +57,7 @@ import { AuditEntry } from '../../core/models/api.models';
             </thead>
             <tbody>
               @for (entry of entries(); track $index) {
-                <tr class="border-b border-slate-800/50">
+                <tr class="border-b border-zinc-800/50">
                   <td class="px-2 py-1">{{ entry.occurred_at }}</td>
                   <td class="px-2 py-1">{{ entry.action }}</td>
                   <td class="px-2 py-1">{{ entry.actor.username || entry.actor.user_id }}</td>

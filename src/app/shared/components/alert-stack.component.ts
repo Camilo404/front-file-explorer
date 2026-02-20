@@ -18,9 +18,9 @@ import { ErrorStoreService } from '../../core/errors/error-store.service';
             [class.border-amber-700]="alert.level === 'warning'"
             [class.bg-amber-950]="alert.level === 'warning'"
             [class.text-amber-100]="alert.level === 'warning'"
-            [class.border-sky-700]="alert.level === 'info'"
-            [class.bg-sky-950]="alert.level === 'info'"
-            [class.text-sky-100]="alert.level === 'info'"
+            [class.border-fuchsia-700]="alert.level === 'info'"
+            [class.bg-fuchsia-950]="alert.level === 'info'"
+            [class.text-fuchsia-100]="alert.level === 'info'"
             [class.border-emerald-700]="alert.level === 'success'"
             [class.bg-emerald-950]="alert.level === 'success'"
             [class.text-emerald-100]="alert.level === 'success'"
@@ -35,7 +35,7 @@ import { ErrorStoreService } from '../../core/errors/error-store.service';
               </div>
               <button
                 type="button"
-                class="rounded bg-slate-900/60 px-2 py-1 text-xs hover:bg-slate-900"
+                class="rounded bg-zinc-900/60 px-2 py-1 text-xs hover:bg-zinc-900"
                 (click)="errorStore.dismiss(alert.id)"
                 aria-label="Dismiss alert"
               >

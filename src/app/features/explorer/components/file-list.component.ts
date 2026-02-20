@@ -1,4 +1,4 @@
-﻿import { ChangeDetectionStrategy, Component, computed, input, output, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, input, output, signal } from '@angular/core';
 
 import { FileItem } from '../../../core/models/api.models';
 import { SearchFilters, SearchPanelComponent } from './search-panel.component';
@@ -12,57 +12,87 @@ import { SearchFilters, SearchPanelComponent } from './search-panel.component';
   },
   template: `
     <section
-      class="relative flex h-full flex-col overflow-hidden rounded-xl border border-white/10 bg-slate-900/50 shadow-2xl backdrop-blur-xl"
+      class="relative flex h-full flex-col overflow-hidden rounded-2xl border border-white/5 bg-zinc-900/40 shadow-xl backdrop-blur-2xl ring-1 ring-white/5"
       (dragenter)="onExternalDragEnter($event)"
       (dragover)="onExternalDragOver($event)"
       (dragleave)="onExternalDragLeave($event)"
       (drop)="onExternalDrop($event)"
     >
-      <header class="flex shrink-0 flex-col gap-3 border-b border-white/5 bg-white/5 p-3 sm:gap-4 sm:p-4">
+      <header class="flex shrink-0 flex-col gap-4 border-b border-white/5 bg-white/5 p-4 sm:gap-5 sm:p-5">
         <app-search-panel (search)="search.emit($event)" (clearFilters)="clearSearch.emit()" />
 
         <!-- External file drop overlay -->
         @if (isExternalDragOver()) {
           <div
-            class="pointer-events-none absolute inset-0 z-50 flex flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed border-sky-400 bg-slate-900/80 backdrop-blur-sm"
+            class="pointer-events-none absolute inset-0 z-50 flex flex-col items-center justify-center gap-4 rounded-2xl border-2 border-dashed border-violet-500/50 bg-zinc-950/80 backdrop-blur-md"
             aria-hidden="true"
           >
-            <i class="fa-solid fa-cloud-arrow-up text-5xl text-sky-400"></i>
-            <p class="text-lg font-semibold text-sky-300">Suelta para subir archivos</p>
-            <p class="text-sm text-slate-400">Se subirán a la carpeta actual</p>
+            <i class="fa-solid fa-cloud-arrow-up text-4xl text-violet-400"></i>
+            <p class="text-xl font-bold text-violet-300">Suelta para subir archivos</p>
+            <p class="mt-1 text-sm font-medium text-zinc-400">Se subirán a la carpeta actual</p>
           </div>
         }
 
-        <div class="flex flex-wrap items-center justify-between gap-2">
-          <div class="flex flex-wrap items-center gap-2">
-            <i class="fa-solid fa-table-list text-sky-400"></i>
-            <h2 class="text-sm font-semibold text-slate-200">
+        <div class="flex flex-wrap items-center justify-between gap-3">
+          <div class="flex flex-wrap items-center gap-3">
+            <i class="fa-solid fa-table-list text-violet-400"></i>
+            <h2 class="text-sm font-bold tracking-wide text-zinc-100">
               {{ isSearchMode() ? 'Resultados de búsqueda' : 'Contenido' }}
             </h2>
-            <span class="rounded-full bg-white/10 px-2.5 py-0.5 text-xs font-medium text-slate-300">
+            <span class="rounded-lg bg-white/5 px-2.5 py-1 text-xs font-semibold text-zinc-300 ring-1 ring-white/10">
               {{ totalItems() }} items
             </span>
             @if (selectedPaths().length > 1) {
-              <span class="rounded-full bg-sky-500/20 px-2.5 py-0.5 text-xs font-medium text-sky-300">
+              <span class="rounded-lg bg-violet-500/15 px-2.5 py-1 text-xs font-semibold text-violet-300 ring-1 ring-violet-500/30">
                 {{ selectedPaths().length }} sel.
               </span>
             }
             @if (isDragging()) {
-              <span class="hidden rounded-full bg-amber-500/20 px-2.5 py-0.5 text-xs font-medium text-amber-300 sm:inline-flex sm:items-center">
+              <span class="hidden rounded-lg bg-amber-500/15 px-2.5 py-1 text-xs font-semibold text-amber-300 ring-1 ring-amber-500/30 sm:inline-flex sm:items-center">
                 <i class="fa-solid fa-hand-pointer mr-1"></i>
                 Arrastrando {{ dragCount() }} {{ dragCount() === 1 ? 'elemento' : 'elementos' }}
               </span>
             }
           </div>
 
-          <div class="flex items-center gap-2">
-            <span class="hidden text-xs text-slate-400 sm:inline">
-              Página {{ page() }} de {{ totalPages() }}
-            </span>
-            <div class="flex gap-1">
+          <div class="flex items-center gap-3">
+            <!-- View Toggle -->
+            <div class="flex items-center rounded-lg bg-zinc-900/50 p-1 ring-1 ring-white/10">
               <button
                 type="button"
-                class="flex size-7 items-center justify-center rounded-lg bg-white/5 text-slate-300 transition-all hover:bg-white/10 hover:text-white disabled:opacity-50 disabled:hover:bg-white/5 disabled:hover:text-slate-300"
+                class="flex size-7 items-center justify-center rounded transition-all"
+                [class.bg-white/10]="viewMode() === 'list'"
+                [class.text-white]="viewMode() === 'list'"
+                [class.text-zinc-500]="viewMode() !== 'list'"
+                [class.hover:text-zinc-300]="viewMode() !== 'list'"
+                (click)="viewMode.set('list')"
+                aria-label="Vista de lista"
+                title="Vista de lista"
+              >
+                <i class="fa-solid fa-list text-xs"></i>
+              </button>
+              <button
+                type="button"
+                class="flex size-7 items-center justify-center rounded transition-all"
+                [class.bg-white/10]="viewMode() === 'grid'"
+                [class.text-white]="viewMode() === 'grid'"
+                [class.text-zinc-500]="viewMode() !== 'grid'"
+                [class.hover:text-zinc-300]="viewMode() !== 'grid'"
+                (click)="viewMode.set('grid')"
+                aria-label="Vista de cuadrícula"
+                title="Vista de cuadrícula"
+              >
+                <i class="fa-solid fa-border-all text-xs"></i>
+              </button>
+            </div>
+
+            <span class="hidden text-xs font-medium text-zinc-400 sm:inline">
+              Página {{ page() }} de {{ totalPages() }}
+            </span>
+            <div class="flex gap-1.5">
+              <button
+                type="button"
+                class="flex size-8 items-center justify-center rounded-xl bg-white/5 text-zinc-300 transition-all hover:bg-white/10 hover:text-white hover:shadow-md disabled:opacity-40 disabled:hover:bg-white/5 disabled:hover:text-zinc-300 disabled:hover:shadow-none"
                 [disabled]="page() <= 1"
                 (click)="changePage.emit(-1)"
                 aria-label="Página anterior"
@@ -71,7 +101,7 @@ import { SearchFilters, SearchPanelComponent } from './search-panel.component';
               </button>
               <button
                 type="button"
-                class="flex size-7 items-center justify-center rounded-lg bg-white/5 text-slate-300 transition-all hover:bg-white/10 hover:text-white disabled:opacity-50 disabled:hover:bg-white/5 disabled:hover:text-slate-300"
+                class="flex size-8 items-center justify-center rounded-xl bg-white/5 text-zinc-300 transition-all hover:bg-white/10 hover:text-white hover:shadow-md disabled:opacity-40 disabled:hover:bg-white/5 disabled:hover:text-zinc-300 disabled:hover:shadow-none"
                 [disabled]="page() >= totalPages()"
                 (click)="changePage.emit(1)"
                 aria-label="Página siguiente"
@@ -89,35 +119,194 @@ import { SearchFilters, SearchPanelComponent } from './search-panel.component';
         tabindex="-1"
         (click)="onContainerClick($event)"
       >
-        <table class="w-full table-fixed text-left text-sm">
-          <colgroup>
-            <col class="w-10" />
-            <col />
-            <col class="hidden w-24 sm:table-column" />
-            <col class="hidden w-36 md:table-column" />
-            <col class="hidden w-36 lg:table-column" />
-            <col class="w-20" />
-          </colgroup>
-          <thead class="sticky top-0 z-10 bg-slate-900/95 backdrop-blur-md">
-            <tr class="border-b border-white/5 text-xs font-medium text-slate-400">
-              <th class="px-2 py-3 sm:px-4" aria-label="Selección"></th>
-              <th class="px-2 py-3 sm:px-4">Nombre</th>
-              <th class="hidden px-4 py-3 sm:table-cell">Tamaño</th>
-              <th class="hidden px-4 py-3 md:table-cell">Modificado</th>
-              <th class="hidden px-4 py-3 lg:table-cell">Creado</th>
-              <th class="px-2 py-3 text-center sm:px-4">Acciones</th>
-            </tr>
-          </thead>
-          <tbody class="divide-y divide-white/5">
+        @if (viewMode() === 'list') {
+          <table class="w-full table-fixed text-left text-sm">
+            <colgroup>
+              <col class="w-10" />
+              <col class="w-1/2 sm:w-88" />
+              <col class="hidden w-24 sm:table-column" />
+              <col class="hidden w-36 md:table-column" />
+              <col class="hidden w-36 lg:table-column" />
+              <col class="w-20" />
+            </colgroup>
+            <thead class="sticky top-0 z-10 bg-zinc-900/95 backdrop-blur-md">
+              <tr class="border-b border-white/5 text-xs font-medium text-zinc-400">
+                <th class="px-2 py-3 sm:px-4" aria-label="Selección"></th>
+                <th class="px-2 py-3 sm:px-4">Nombre</th>
+                <th class="hidden px-4 py-3 sm:table-cell">Tamaño</th>
+                <th class="hidden px-4 py-3 md:table-cell">Modificado</th>
+                <th class="hidden px-4 py-3 lg:table-cell">Creado</th>
+                <th class="px-2 py-3 text-center sm:px-4 pr-6 sm:pr-8">Acciones</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-white/5">
 
-            <!-- Parent (..) row always first, only outside search mode -->
+              <!-- Parent (..) row always first, only outside search mode -->
+              @if (showParentRow()) {
+                <tr
+                  class="group cursor-pointer select-none transition-colors hover:bg-white/5 focus:outline-none focus-visible:ring-1 focus-visible:ring-inset focus-visible:ring-violet-500"
+                  [class.ring-2]="dragOverParent()"
+                  [class.ring-inset]="dragOverParent()"
+                  [class.ring-violet-400]="dragOverParent()"
+                  [class.bg-violet-500/10]="dragOverParent()"
+                  tabindex="0"
+                  aria-label="Carpeta superior"
+                  (dblclick)="navigateToParent.emit()"
+                  (keydown.enter)="navigateToParent.emit()"
+                  (dragover)="onDragOverParent($event)"
+                  (dragleave)="onDragLeaveParent()"
+                  (drop)="onDropOnParent($event)"
+                >
+                  <td class="px-2 py-3 sm:px-4"></td>
+                  <td class="px-2 py-3 sm:px-4">
+                    <div class="flex items-center gap-3">
+                      <div class="flex size-8 shrink-0 items-center justify-center rounded-lg bg-white/5">
+                        <i class="fa-solid fa-folder-open text-zinc-400"></i>
+                      </div>
+                      <span class="font-medium text-zinc-400 transition-colors group-hover:text-zinc-200">..</span>
+                    </div>
+                  </td>
+                  <td class="hidden px-4 py-3 text-zinc-500 sm:table-cell">-</td>
+                  <td class="hidden px-4 py-3 text-zinc-500 md:table-cell">-</td>
+                  <td class="hidden px-4 py-3 text-zinc-500 lg:table-cell">-</td>
+                  <td class="px-2 py-3 sm:px-4"></td>
+                </tr>
+              }
+
+              @if (items().length === 0 && !showParentRow()) {
+                <tr>
+                  <td colspan="6">
+                    <div class="flex flex-col items-center justify-center p-8 text-center opacity-50">
+                      <i class="fa-solid fa-folder-open mb-3 text-5xl text-zinc-400"></i>
+                      <p class="mt-1 text-sm font-medium text-zinc-400">No hay elementos para mostrar en esta carpeta.</p>
+                    </div>
+                  </td>
+                </tr>
+              }
+
+              @if (items().length === 0 && showParentRow()) {
+                <tr>
+                  <td colspan="6">
+                    <div class="flex flex-col items-center justify-center p-6 text-center opacity-50">
+                      <p class="mt-1 text-sm font-medium text-zinc-400">La carpeta está vacía.</p>
+                    </div>
+                  </td>
+                </tr>
+              }
+
+              @for (item of items(); track item.path; let idx = $index) {
+                <tr
+                  class="group cursor-pointer select-none transition-colors hover:bg-white/5 focus:outline-none focus-visible:ring-1 focus-visible:ring-inset focus-visible:ring-violet-500"
+                  [class.bg-violet-500/10]="isSelected(item.path)"
+                  [class.opacity-40]="isDragging() && isInDrag(item.path)"
+                  [class.ring-2]="isDirectory(item) && dragOverPath() === item.path"
+                  [class.ring-inset]="isDirectory(item) && dragOverPath() === item.path"
+                  [class.ring-violet-400]="isDirectory(item) && dragOverPath() === item.path"
+                  [class.bg-violet-500/15]="isDirectory(item) && dragOverPath() === item.path"
+                  tabindex="0"
+                  draggable="true"
+                  data-file-item="true"
+                  [attr.aria-selected]="isSelected(item.path)"
+                  [attr.aria-label]="item.name"
+                  (click)="onRowClick($event, item, idx)"
+                  (dblclick)="onRowDblClick(item)"
+                  (keydown.enter)="onRowDblClick(item)"
+                  (keydown.space)="onRowKeySpace($event, item, idx)"
+                  (contextmenu)="onContextMenu($event, item)"
+                  (dragstart)="onDragStart($event, item)"
+                  (dragend)="onDragEnd()"
+                  (dragover)="onDragOver($event, item)"
+                  (dragleave)="onDragLeave($event, item)"
+                  (drop)="onDrop($event, item)"
+                >
+                  <!-- Checkbox -->
+                  <td class="px-2 py-3 sm:px-4">
+                    <div class="flex items-center justify-center">
+                      <input
+                        type="checkbox"
+                        class="size-4 cursor-pointer rounded border-white/20 bg-white/5 text-violet-500 transition-all focus:ring-violet-500/50 focus:ring-offset-0"
+                        [class.opacity-0]="!isSelected(item.path)"
+                        [class.group-hover:opacity-100]="!isSelected(item.path)"
+                        [checked]="isSelected(item.path)"
+                        (click)="$event.stopPropagation()"
+                        (change)="onCheckboxChange(item)"
+                        [attr.aria-label]="'Seleccionar ' + item.name"
+                      />
+                    </div>
+                  </td>
+
+                  <!-- Name -->
+                  <td class="overflow-hidden px-2 py-3 sm:px-4">
+                    <div class="flex min-w-0 items-center gap-3">
+                      <div class="flex size-8 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-white/5 shadow-inner">
+                        @if (isMedia(item) && thumbnailUrl(item.path)) {
+                          <img
+                            [src]="thumbnailUrl(item.path)"
+                            [alt]="item.name"
+                            class="size-full object-cover transition-transform duration-300 group-hover:scale-110"
+                            loading="lazy"
+                          />
+                        } @else {
+                          @if (isDirectory(item)) {
+                            <i class="fa-solid fa-folder text-violet-400"></i>
+                          } @else if (isVideo(item)) {
+                            <i class="fa-solid fa-file-video text-violet-300"></i>
+                          } @else {
+                            <i class="fa-solid fa-file text-zinc-400"></i>
+                          }
+                        }
+                      </div>
+                      <span
+                        class="min-w-0 truncate font-medium transition-colors"
+                        [class.text-violet-400]="isSelected(item.path)"
+                        [class.text-zinc-200]="!isSelected(item.path)"
+                      >
+                        {{ item.name }}
+                      </span>
+                    </div>
+                  </td>
+
+                  <td class="hidden px-4 py-3 text-zinc-400 sm:table-cell">{{ itemMeta(item) }}</td>
+                  <td class="hidden px-4 py-3 text-zinc-400 md:table-cell">{{ formatDate(item.modified_at) }}</td>
+                  <td class="hidden px-4 py-3 text-zinc-400 lg:table-cell">{{ formatDate(item.created_at) }}</td>
+
+                  <td class="px-2 py-3 sm:px-3 pr-6 sm:pr-8">
+                    <div class="flex items-center justify-end gap-1.5">
+                      <button
+                        type="button"
+                        class="inline-flex size-7 items-center justify-center rounded-lg text-zinc-400 transition-all hover:bg-white/10 hover:text-white"
+                        (click)="$event.stopPropagation(); onContextMenuButton($event, item)"
+                        aria-label="Más opciones"
+                        title="Más opciones"
+                      >
+                        <i class="fa-solid fa-ellipsis-vertical text-xs"></i>
+                      </button>
+                      <button
+                        type="button"
+                        class="hidden size-7 items-center justify-center rounded-lg text-zinc-400 transition-all hover:bg-white/10 hover:text-white sm:inline-flex"
+                        (click)="$event.stopPropagation(); info.emit(item.path)"
+                        aria-label="Información"
+                        title="Información"
+                      >
+                        <i class="fa-solid fa-circle-info text-xs"></i>
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        } @else {
+          <!-- Grid View -->
+          <div class="grid grid-cols-[repeat(auto-fill,minmax(140px,1fr))] gap-4 p-4">
+            <!-- Parent (..) card always first, only outside search mode -->
             @if (showParentRow()) {
-              <tr
-                class="group cursor-pointer select-none transition-colors hover:bg-white/5 focus:outline-none focus-visible:ring-1 focus-visible:ring-inset focus-visible:ring-sky-500"
+              <div
+                class="group flex aspect-square cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border border-white/5 bg-white/5 p-4 transition-all hover:bg-white/10 hover:shadow-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-violet-500"
                 [class.ring-2]="dragOverParent()"
                 [class.ring-inset]="dragOverParent()"
-                [class.ring-sky-400]="dragOverParent()"
-                [class.bg-sky-500/10]="dragOverParent()"
+                [class.ring-violet-400]="dragOverParent()"
+                [class.bg-violet-500/10]="dragOverParent()"
                 tabindex="0"
                 aria-label="Carpeta superior"
                 (dblclick)="navigateToParent.emit()"
@@ -126,54 +315,41 @@ import { SearchFilters, SearchPanelComponent } from './search-panel.component';
                 (dragleave)="onDragLeaveParent()"
                 (drop)="onDropOnParent($event)"
               >
-                <td class="px-2 py-3 sm:px-4"></td>
-                <td class="px-2 py-3 sm:px-4">
-                  <div class="flex items-center gap-3">
-                    <div class="flex size-8 shrink-0 items-center justify-center rounded-lg bg-white/5">
-                      <i class="fa-solid fa-folder-open text-slate-400"></i>
-                    </div>
-                    <span class="font-medium text-slate-400 transition-colors group-hover:text-slate-200">..</span>
-                  </div>
-                </td>
-                <td class="hidden px-4 py-3 text-slate-500 sm:table-cell">-</td>
-                <td class="hidden px-4 py-3 text-slate-500 md:table-cell">-</td>
-                <td class="hidden px-4 py-3 text-slate-500 lg:table-cell">-</td>
-                <td class="px-2 py-3 sm:px-4"></td>
-              </tr>
+                <div class="flex size-12 items-center justify-center rounded-2xl bg-white/5 shadow-inner">
+                  <i class="fa-solid fa-folder-open text-2xl text-zinc-400"></i>
+                </div>
+                <span class="text-sm font-medium text-zinc-400 transition-colors group-hover:text-zinc-200">..</span>
+              </div>
             }
 
             @if (items().length === 0 && !showParentRow()) {
-              <tr>
-                <td colspan="6">
-                  <div class="flex flex-col items-center justify-center p-8 text-center opacity-50">
-                    <i class="fa-solid fa-folder-open mb-3 text-5xl text-slate-400"></i>
-                    <p class="text-sm text-slate-400">No hay elementos para mostrar en esta carpeta.</p>
-                  </div>
-                </td>
-              </tr>
+              <div class="col-span-full flex flex-col items-center justify-center p-8 text-center opacity-50">
+                <i class="fa-solid fa-folder-open mb-3 text-5xl text-zinc-400"></i>
+                <p class="mt-1 text-sm font-medium text-zinc-400">No hay elementos para mostrar en esta carpeta.</p>
+              </div>
             }
 
             @if (items().length === 0 && showParentRow()) {
-              <tr>
-                <td colspan="6">
-                  <div class="flex flex-col items-center justify-center p-6 text-center opacity-50">
-                    <p class="text-sm text-slate-400">La carpeta está vacía.</p>
-                  </div>
-                </td>
-              </tr>
+              <div class="col-span-full flex flex-col items-center justify-center p-6 text-center opacity-50">
+                <p class="mt-1 text-sm font-medium text-zinc-400">La carpeta está vacía.</p>
+              </div>
             }
 
             @for (item of items(); track item.path; let idx = $index) {
-              <tr
-                class="group cursor-pointer select-none transition-colors hover:bg-white/5 focus:outline-none focus-visible:ring-1 focus-visible:ring-inset focus-visible:ring-sky-500"
-                [class.bg-sky-500/10]="isSelected(item.path)"
+              <div
+                class="group relative flex aspect-square cursor-pointer flex-col overflow-hidden rounded-xl border border-white/5 bg-white/5 transition-all hover:bg-white/10 hover:shadow-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-violet-500"
+                [class.ring-2]="isSelected(item.path)"
+                [class.ring-inset]="isSelected(item.path)"
+                [class.ring-violet-500]="isSelected(item.path)"
+                [class.bg-violet-500/10]="isSelected(item.path)"
                 [class.opacity-40]="isDragging() && isInDrag(item.path)"
                 [class.ring-2]="isDirectory(item) && dragOverPath() === item.path"
                 [class.ring-inset]="isDirectory(item) && dragOverPath() === item.path"
-                [class.ring-sky-400]="isDirectory(item) && dragOverPath() === item.path"
-                [class.bg-sky-500/15]="isDirectory(item) && dragOverPath() === item.path"
+                [class.ring-violet-400]="isDirectory(item) && dragOverPath() === item.path"
+                [class.bg-violet-500/15]="isDirectory(item) && dragOverPath() === item.path"
                 tabindex="0"
                 draggable="true"
+                data-file-item="true"
                 [attr.aria-selected]="isSelected(item.path)"
                 [attr.aria-label]="item.name"
                 (click)="onRowClick($event, item, idx)"
@@ -187,83 +363,71 @@ import { SearchFilters, SearchPanelComponent } from './search-panel.component';
                 (dragleave)="onDragLeave($event, item)"
                 (drop)="onDrop($event, item)"
               >
-                <!-- Checkbox -->
-                <td class="px-2 py-3 sm:px-4">
-                  <div class="flex items-center justify-center">
-                    <input
-                      type="checkbox"
-                      class="size-4 cursor-pointer rounded border-white/20 bg-white/5 text-sky-500 transition-all focus:ring-sky-500/50 focus:ring-offset-0"
-                      [class.opacity-0]="!isSelected(item.path)"
-                      [class.group-hover:opacity-100]="!isSelected(item.path)"
-                      [checked]="isSelected(item.path)"
-                      (click)="$event.stopPropagation()"
-                      (change)="onCheckboxChange(item)"
-                      [attr.aria-label]="'Seleccionar ' + item.name"
-                    />
-                  </div>
-                </td>
+                <!-- Checkbox (Visible on hover or selected) -->
+                <div class="absolute left-2 top-2 z-10 opacity-0 transition-opacity group-hover:opacity-100" [class.opacity-100]="isSelected(item.path)">
+                  <input
+                    type="checkbox"
+                    class="size-4 cursor-pointer rounded border-white/20 bg-zinc-900/80 text-violet-500 transition-all focus:ring-violet-500/50 focus:ring-offset-0"
+                    [checked]="isSelected(item.path)"
+                    (click)="$event.stopPropagation()"
+                    (change)="onCheckboxChange(item)"
+                    [attr.aria-label]="'Seleccionar ' + item.name"
+                  />
+                </div>
 
-                <!-- Name -->
-                <td class="overflow-hidden px-2 py-3 sm:px-4">
-                  <div class="flex min-w-0 items-center gap-3">
-                    <div class="flex size-8 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-white/5 shadow-inner">
-                      @if (isMedia(item) && thumbnailUrl(item.path)) {
-                        <img
-                          [src]="thumbnailUrl(item.path)"
-                          [alt]="item.name"
-                          class="size-full object-cover transition-transform duration-300 group-hover:scale-110"
-                          loading="lazy"
-                        />
+                <!-- Actions (Visible on hover) -->
+                <div class="absolute right-2 top-2 z-10 opacity-0 transition-opacity group-hover:opacity-100">
+                  <button
+                    type="button"
+                    class="flex size-7 items-center justify-center rounded-lg bg-zinc-900/80 text-zinc-400 transition-all hover:bg-zinc-800 hover:text-white"
+                    (click)="$event.stopPropagation(); onContextMenuButton($event, item)"
+                    aria-label="Más opciones"
+                    title="Más opciones"
+                  >
+                    <i class="fa-solid fa-ellipsis-vertical text-xs"></i>
+                  </button>
+                </div>
+
+                <!-- Preview Area -->
+                <div class="flex flex-1 w-full items-center justify-center overflow-hidden bg-black/20 p-4">
+                  @if (isMedia(item) && thumbnailUrl(item.path)) {
+                    <img
+                      [src]="thumbnailUrl(item.path)"
+                      [alt]="item.name"
+                      class="size-full object-contain transition-transform duration-300 group-hover:scale-105"
+                      loading="lazy"
+                    />
+                  } @else {
+                    <div class="flex size-14 items-center justify-center rounded-2xl bg-white/5 shadow-inner transition-transform duration-300 group-hover:scale-110">
+                      @if (isDirectory(item)) {
+                        <i class="fa-solid fa-folder text-3xl text-violet-400"></i>
+                      } @else if (isVideo(item)) {
+                        <i class="fa-solid fa-file-video text-3xl text-violet-300"></i>
                       } @else {
-                        @if (isDirectory(item)) {
-                          <i class="fa-solid fa-folder text-sky-400"></i>
-                        } @else if (isVideo(item)) {
-                          <i class="fa-solid fa-file-video text-violet-300"></i>
-                        } @else {
-                          <i class="fa-solid fa-file text-slate-400"></i>
-                        }
+                        <i class="fa-solid fa-file text-3xl text-zinc-400"></i>
                       }
                     </div>
-                    <span
-                      class="min-w-0 truncate font-medium transition-colors"
-                      [class.text-sky-400]="isSelected(item.path)"
-                      [class.text-slate-200]="!isSelected(item.path)"
-                    >
-                      {{ item.name }}
-                    </span>
-                  </div>
-                </td>
+                  }
+                </div>
 
-                <td class="hidden px-4 py-3 text-slate-400 sm:table-cell">{{ itemMeta(item) }}</td>
-                <td class="hidden px-4 py-3 text-slate-400 md:table-cell">{{ formatDate(item.modified_at) }}</td>
-                <td class="hidden px-4 py-3 text-slate-400 lg:table-cell">{{ formatDate(item.created_at) }}</td>
-
-                <td class="px-2 py-3 sm:px-3">
-                  <div class="flex items-center justify-center gap-1">
-                    <button
-                      type="button"
-                      class="inline-flex size-7 items-center justify-center rounded-lg text-slate-400 transition-all hover:bg-white/10 hover:text-white"
-                      (click)="$event.stopPropagation(); onContextMenuButton($event, item)"
-                      aria-label="Más opciones"
-                      title="Más opciones"
-                    >
-                      <i class="fa-solid fa-ellipsis-vertical text-xs"></i>
-                    </button>
-                    <button
-                      type="button"
-                      class="hidden size-7 items-center justify-center rounded-lg text-slate-400 transition-all hover:bg-white/10 hover:text-white sm:inline-flex"
-                      (click)="$event.stopPropagation(); info.emit(item.path)"
-                      aria-label="Información"
-                      title="Información"
-                    >
-                      <i class="fa-solid fa-circle-info text-xs"></i>
-                    </button>
+                <!-- Info Area -->
+                <div class="flex w-full flex-col gap-0.5 border-t border-white/5 bg-white/5 p-2.5">
+                  <span
+                    class="truncate text-xs font-medium transition-colors"
+                    [class.text-violet-400]="isSelected(item.path)"
+                    [class.text-zinc-200]="!isSelected(item.path)"
+                    [title]="item.name"
+                  >
+                    {{ item.name }}
+                  </span>
+                  <div class="flex items-center justify-between text-[10px] text-zinc-500">
+                    <span>{{ itemMeta(item) }}</span>
                   </div>
-                </td>
-              </tr>
+                </div>
+              </div>
             }
-          </tbody>
-        </table>
+          </div>
+        }
       </div>
     </section>
   `,
@@ -290,9 +454,10 @@ export class FileListComponent {
   readonly moveItems = output<{ sources: string[]; destination: string }>();
   readonly uploadFiles = output<FileList>();
 
+  readonly viewMode = signal<'list' | 'grid'>('list');
   private readonly anchorPath = signal<string | null>(null);
 
-  // ── External drop state ───────────────────────────────────────────────────
+  // -- External drop state ---------------------------------------------------
   private externalDragCounter = 0;
   readonly isExternalDragOver = signal(false);
 
@@ -388,7 +553,9 @@ export class FileListComponent {
 
   onContainerClick(event: MouseEvent): void {
     const target = event.target as HTMLElement;
-    if (!target.closest('tr')) {
+    // If the click is on a file item (row or card), let that handler take care of it.
+    // We only clear selection if clicking on the "empty space" of the container.
+    if (!target.closest('[data-file-item]')) {
       this.selectionChange.emit([]);
       this.anchorPath.set(null);
       // Keep focus inside the component so Ctrl+A still works
@@ -406,7 +573,7 @@ export class FileListComponent {
     this.contextMenu.emit({ event, item });
   }
 
-  // ── External file upload drag & drop ─────────────────────────────────────
+  // -- External file upload drag & drop -------------------------------------
   onExternalDragEnter(event: DragEvent): void {
     if (!this.isExternalFileDrag(event)) return;
     this.externalDragCounter++;
@@ -441,7 +608,7 @@ export class FileListComponent {
     }
   }
 
-  // ── Drag & Drop ──────────────────────────────────────
+  // -- Drag & Drop --------------------------------------
   onDragStart(event: DragEvent, item: FileItem): void {
     // If the dragged item is among the selection, drag all selected; otherwise drag only this item
     const selected = this.selectedPaths();
@@ -461,7 +628,7 @@ export class FileListComponent {
   }
 
   onDragOver(event: DragEvent, item: FileItem): void {
-    // External file drag — let it bubble to the section drop zone
+    // External file drag - let it bubble to the section drop zone
     if (this.dragPaths().length === 0) return;
     if (!this.isDirectory(item)) return;
     if (this.dragPaths().includes(item.path)) return;
@@ -484,7 +651,7 @@ export class FileListComponent {
   }
 
   onDrop(event: DragEvent, item: FileItem): void {
-    // External file drag — let it bubble to the section drop zone
+    // External file drag - let it bubble to the section drop zone
     if (this.dragPaths().length === 0) return;
     event.preventDefault();
     event.stopPropagation();
@@ -520,7 +687,7 @@ export class FileListComponent {
     this.dragOverParent.set(false);
   }
 
-  // ── Helpers ──────────────────────────────────────
+  // -- Helpers --------------------------------------
   isDirectory(item: FileItem): boolean {
     const normalizedType = item.type.trim().toLowerCase();
     return normalizedType === 'dir' || normalizedType === 'directory' || normalizedType === 'folder';

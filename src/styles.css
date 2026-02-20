@@ -1,3 +1,7 @@
 /* You can add global styles to this file, and also import other style files */
 
 @import "tailwindcss";
+
+html, body {
+  @apply bg-zinc-950 text-zinc-200 h-full;
+}

@@ -23,7 +23,7 @@ import { ChangeDetectionStrategy, Component, ElementRef, effect, input, output, 
 
         <!-- Panel -->
         <div
-          class="relative w-full max-w-md rounded-2xl border border-white/10 bg-slate-900 p-6 shadow-2xl"
+          class="relative w-full max-w-md rounded-2xl border border-white/10 bg-zinc-900 p-6 shadow-2xl"
           (click)="$event.stopPropagation()"
         >
           <h2 [id]="titleId" class="mb-4 text-base font-semibold text-white">
@@ -31,7 +31,7 @@ import { ChangeDetectionStrategy, Component, ElementRef, effect, input, output, 
           </h2>
 
           @if (label()) {
-            <label [for]="inputId" class="mb-1.5 block text-sm font-medium text-slate-300">
+            <label [for]="inputId" class="mb-1.5 block text-sm font-medium text-zinc-300">
               {{ label() }}
             </label>
           }
@@ -42,7 +42,7 @@ import { ChangeDetectionStrategy, Component, ElementRef, effect, input, output, 
             [id]="inputId"
             [value]="inputValue()"
             [placeholder]="placeholder() ?? ''"
-            class="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-slate-200 placeholder-slate-500 transition-colors focus:border-sky-500/50 focus:bg-white/10 focus:outline-none focus:ring-1 focus:ring-sky-500/50"
+            class="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-zinc-200 placeholder-zinc-500 transition-colors focus:border-violet-500/50 focus:bg-white/10 focus:outline-none focus:ring-1 focus:ring-violet-500/50"
             (input)="onInput($event)"
             (keydown.enter)="onConfirm()"
           />
@@ -50,7 +50,7 @@ import { ChangeDetectionStrategy, Component, ElementRef, effect, input, output, 
           <div class="mt-5 flex justify-end gap-2">
             <button
               type="button"
-              class="rounded-lg px-4 py-2 text-sm font-medium text-slate-300 transition-all hover:bg-white/10 hover:text-white"
+              class="rounded-lg px-4 py-2 text-sm font-medium text-zinc-300 transition-all hover:bg-white/10 hover:text-white"
               (click)="cancel.emit()"
             >
               Cancelar
@@ -60,7 +60,7 @@ import { ChangeDetectionStrategy, Component, ElementRef, effect, input, output, 
               class="rounded-lg px-4 py-2 text-sm font-medium transition-all"
               [class]="isDanger()
                 ? 'bg-red-500/20 text-red-400 hover:bg-red-500/30 hover:text-red-300'
-                : 'bg-sky-500/20 text-sky-400 hover:bg-sky-500/30 hover:text-sky-300'"
+                : 'bg-violet-500/20 text-violet-400 hover:bg-violet-500/30 hover:text-violet-300'"
               (click)="onConfirm()"
             >
               {{ confirmLabel() ?? 'Confirmar' }}

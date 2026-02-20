@@ -11,16 +11,16 @@ import { TrashRecord } from '../../core/models/api.models';
   template: `
     <section class="space-y-3">
       <header class="flex items-center justify-between">
-        <h1 class="text-lg font-semibold">Trash</h1>
+        <h1 class="text-2xl font-bold tracking-tight text-zinc-100">Trash</h1>
         <div class="flex items-center gap-2 text-xs">
           <input
             type="text"
             [value]="searchText()"
             placeholder="Filtrar por path o usuario"
-            class="rounded border border-slate-700 bg-slate-950 px-2 py-1"
+            class="rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-sm text-zinc-200 placeholder-zinc-500 transition-colors focus:border-violet-500/50 focus:bg-white/10 focus:outline-none focus:ring-1 focus:ring-violet-500/50"
             (input)="onSearchInput($event)"
           />
-          <label class="flex items-center gap-2 rounded border border-slate-700 bg-slate-900 px-2 py-1">
+          <label class="flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-sm text-zinc-200 transition-colors hover:bg-white/10">
             <input
               type="checkbox"
               [checked]="includeRestored()"
@@ -30,7 +30,7 @@ import { TrashRecord } from '../../core/models/api.models';
           </label>
           <button
             type="button"
-            class="rounded bg-slate-700 px-2 py-1 hover:bg-slate-600"
+            class="rounded-xl bg-white/5 px-4 py-2 text-sm font-medium text-zinc-300 transition-all hover:bg-white/10 hover:text-white disabled:opacity-40 disabled:hover:bg-white/5"
             (click)="load()"
           >
             Refresh
@@ -38,18 +38,18 @@ import { TrashRecord } from '../../core/models/api.models';
         </div>
       </header>
 
-      <section class="rounded border border-slate-800 bg-slate-900 p-3">
+      <section class="rounded-2xl border border-white/5 bg-zinc-900/40 p-5 shadow-xl backdrop-blur-2xl ring-1 ring-white/5">
         @if (loading()) {
-          <p class="text-sm text-slate-400">Cargando papelera...</p>
+          <p class="text-sm text-zinc-400">Cargando papelera...</p>
         } @else if (records().length === 0) {
-          <p class="text-sm text-slate-400">No hay elementos en papelera.</p>
+          <p class="text-sm text-zinc-400">No hay elementos en papelera.</p>
         } @else if (pagedRecords().length === 0) {
-          <p class="text-sm text-slate-400">No hay resultados para el filtro actual.</p>
+          <p class="text-sm text-zinc-400">No hay resultados para el filtro actual.</p>
         } @else {
           <div class="overflow-auto">
             <table class="w-full text-left text-xs">
               <thead>
-                <tr class="border-b border-slate-800">
+                <tr class="border-b border-zinc-800">
                   <th class="px-2 py-1">Original Path</th>
                   <th class="px-2 py-1">Deleted At</th>
                   <th class="px-2 py-1">Deleted By</th>
@@ -59,7 +59,7 @@ import { TrashRecord } from '../../core/models/api.models';
               </thead>
               <tbody>
                 @for (record of pagedRecords(); track record.id) {
-                  <tr class="border-b border-slate-800/50">
+                  <tr class="border-b border-zinc-800/50">
                     <td class="px-2 py-1 font-mono text-[11px]">{{ record.original_path }}</td>
                     <td class="px-2 py-1">{{ record.deleted_at }}</td>
                     <td class="px-2 py-1">{{ record.deleted_by.username || record.deleted_by.user_id || '-' }}</td>
@@ -86,11 +86,11 @@ import { TrashRecord } from '../../core/models/api.models';
             </table>
 
             <div class="mt-3 flex items-center justify-between text-xs">
-              <span class="text-slate-400">Página {{ page() }}/{{ totalPages() }} | Total {{ filteredRecords().length }}</span>
+              <span class="text-zinc-400">Página {{ page() }}/{{ totalPages() }} | Total {{ filteredRecords().length }}</span>
               <div class="flex gap-2">
                 <button
                   type="button"
-                  class="rounded bg-slate-700 px-2 py-1 hover:bg-slate-600"
+                  class="rounded-xl bg-white/5 px-4 py-2 text-sm font-medium text-zinc-300 transition-all hover:bg-white/10 hover:text-white disabled:opacity-40 disabled:hover:bg-white/5"
                   [disabled]="page() <= 1"
                   (click)="changePage(-1)"
                 >
@@ -98,7 +98,7 @@ import { TrashRecord } from '../../core/models/api.models';
                 </button>
                 <button
                   type="button"
-                  class="rounded bg-slate-700 px-2 py-1 hover:bg-slate-600"
+                  class="rounded-xl bg-white/5 px-4 py-2 text-sm font-medium text-zinc-300 transition-all hover:bg-white/10 hover:text-white disabled:opacity-40 disabled:hover:bg-white/5"
                   [disabled]="page() >= totalPages()"
                   (click)="changePage(1)"
                 >

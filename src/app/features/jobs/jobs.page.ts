@@ -13,10 +13,10 @@ import { JobData, JobItemResult } from '../../core/models/api.models';
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <section class="space-y-3">
-      <h1 class="text-lg font-semibold">Jobs</h1>
+      <h1 class="text-2xl font-bold tracking-tight text-zinc-100">Jobs</h1>
 
-      <form class="grid gap-2 rounded border border-slate-800 bg-slate-900 p-3 md:grid-cols-5" [formGroup]="createForm" (ngSubmit)="createJob()">
-        <select formControlName="operation" class="rounded border border-slate-700 bg-slate-950 px-3 py-2" (change)="onOperationChange()">
+      <form class="grid gap-2 rounded-2xl border border-white/5 bg-zinc-900/40 p-5 shadow-xl backdrop-blur-2xl ring-1 ring-white/5 md:grid-cols-5" [formGroup]="createForm" (ngSubmit)="createJob()">
+        <select formControlName="operation" class="rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-sm text-zinc-200 placeholder-zinc-500 transition-colors focus:border-violet-500/50 focus:bg-white/10 focus:outline-none focus:ring-1 focus:ring-violet-500/50" (change)="onOperationChange()">
           <option value="copy">copy</option>
           <option value="move">move</option>
           <option value="delete">delete</option>
@@ -25,34 +25,34 @@ import { JobData, JobItemResult } from '../../core/models/api.models';
           type="text"
           formControlName="sources"
           [placeholder]="isDeleteOperation() ? 'paths (comma separated)' : 'sources (comma separated)'"
-          class="rounded border border-slate-700 bg-slate-950 px-3 py-2 md:col-span-2"
+          class="rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-sm text-zinc-200 placeholder-zinc-500 transition-colors focus:border-violet-500/50 focus:bg-white/10 focus:outline-none focus:ring-1 focus:ring-violet-500/50 md:col-span-2"
         />
         <input
           type="text"
           formControlName="destination"
           [disabled]="isDeleteOperation()"
           [placeholder]="isDeleteOperation() ? 'not required for delete' : 'destination'"
-          class="rounded border border-slate-700 bg-slate-950 px-3 py-2"
+          class="rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-sm text-zinc-200 placeholder-zinc-500 transition-colors focus:border-violet-500/50 focus:bg-white/10 focus:outline-none focus:ring-1 focus:ring-violet-500/50"
         />
         <select
           formControlName="conflictPolicy"
           [disabled]="isDeleteOperation()"
-          class="rounded border border-slate-700 bg-slate-950 px-3 py-2"
+          class="rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-sm text-zinc-200 placeholder-zinc-500 transition-colors focus:border-violet-500/50 focus:bg-white/10 focus:outline-none focus:ring-1 focus:ring-violet-500/50"
         >
           <option value="rename">rename</option>
           <option value="overwrite">overwrite</option>
           <option value="skip">skip</option>
         </select>
-        <button type="submit" class="rounded bg-blue-600 px-3 py-2 text-sm hover:bg-blue-500">Create Job</button>
+        <button type="submit" class="rounded-xl bg-violet-600 px-4 py-2.5 text-sm font-semibold text-white transition-all hover:bg-violet-500 hover:shadow-lg hover:shadow-violet-500/25 active:scale-95 ring-1 ring-violet-500/50">Create Job</button>
       </form>
 
-      <form class="grid gap-2 rounded border border-slate-800 bg-slate-900 p-3 md:grid-cols-4" [formGroup]="lookupForm" (ngSubmit)="lookupJob()">
-        <input type="text" formControlName="jobId" placeholder="job_id" class="rounded border border-slate-700 bg-slate-950 px-3 py-2 md:col-span-3" />
-        <button type="submit" class="rounded bg-slate-700 px-3 py-2 text-sm hover:bg-slate-600">Consultar</button>
+      <form class="grid gap-2 rounded-2xl border border-white/5 bg-zinc-900/40 p-5 shadow-xl backdrop-blur-2xl ring-1 ring-white/5 md:grid-cols-4" [formGroup]="lookupForm" (ngSubmit)="lookupJob()">
+        <input type="text" formControlName="jobId" placeholder="job_id" class="rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-sm text-zinc-200 placeholder-zinc-500 transition-colors focus:border-violet-500/50 focus:bg-white/10 focus:outline-none focus:ring-1 focus:ring-violet-500/50 md:col-span-3" />
+        <button type="submit" class="rounded bg-zinc-700 px-3 py-2 text-sm hover:bg-zinc-600">Consultar</button>
       </form>
 
       @if (job()) {
-        <article class="rounded border border-slate-800 bg-slate-900 p-3 text-sm">
+        <article class="rounded-2xl border border-white/5 bg-zinc-900/40 p-5 shadow-xl backdrop-blur-2xl ring-1 ring-white/5 text-sm">
           <p><strong>ID:</strong> {{ job()!.job_id }}</p>
           <p><strong>Status:</strong> {{ job()!.status }}</p>
           <p><strong>Operation:</strong> {{ job()!.operation }}</p>
@@ -62,11 +62,11 @@ import { JobData, JobItemResult } from '../../core/models/api.models';
       }
 
       @if (items().length > 0) {
-        <section class="rounded border border-slate-800 bg-slate-900 p-3">
+        <section class="rounded-2xl border border-white/5 bg-zinc-900/40 p-5 shadow-xl backdrop-blur-2xl ring-1 ring-white/5">
           <h2 class="mb-2 text-sm font-semibold">Items</h2>
           <ul class="space-y-1 text-xs">
             @for (item of items(); track $index) {
-              <li class="rounded bg-slate-950 px-2 py-1">
+              <li class="rounded bg-zinc-950 px-2 py-1">
                 {{ item.status }} - {{ item.path || item.from }} {{ item.to ? '→ ' + item.to : '' }}
                 @if (item.reason) {
                   <span class="text-red-300">({{ item.reason }})</span>
@@ -76,11 +76,11 @@ import { JobData, JobItemResult } from '../../core/models/api.models';
           </ul>
 
           <div class="mt-3 flex items-center justify-between text-xs">
-            <span class="text-slate-400">Página {{ itemsPage() }}/{{ itemsTotalPages() }} | Total {{ itemsTotal() }}</span>
+            <span class="text-zinc-400">Página {{ itemsPage() }}/{{ itemsTotalPages() }} | Total {{ itemsTotal() }}</span>
             <div class="flex gap-2">
               <button
                 type="button"
-                class="rounded bg-slate-700 px-2 py-1 hover:bg-slate-600"
+                class="rounded bg-zinc-700 px-2 py-1 hover:bg-zinc-600"
                 [disabled]="itemsPage() <= 1"
                 (click)="changeItemsPage(-1)"
               >
@@ -88,7 +88,7 @@ import { JobData, JobItemResult } from '../../core/models/api.models';
               </button>
               <button
                 type="button"
-                class="rounded bg-slate-700 px-2 py-1 hover:bg-slate-600"
+                class="rounded bg-zinc-700 px-2 py-1 hover:bg-zinc-600"
                 [disabled]="itemsPage() >= itemsTotalPages()"
                 (click)="changeItemsPage(1)"
               >

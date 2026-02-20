@@ -12,6 +12,7 @@ import { ContextMenuAction, ContextMenuComponent } from './components/context-me
 import { ExplorerToolbarComponent } from './components/explorer-toolbar.component';
 import { FileListComponent } from './components/file-list.component';
 import { ImageViewerComponent } from './components/image-viewer.component';
+import { VideoViewerComponent } from './components/video-viewer.component';
 import { SearchFilters } from './components/search-panel.component';
 import { TreePanelComponent } from './components/tree-panel.component';
 import { ConflictResolutionModalComponent } from '../../shared/components/conflict-resolution-modal.component';
@@ -42,7 +43,7 @@ interface BreadcrumbItem {
 
 @Component({
   selector: 'app-explorer-page',
-  imports: [TreePanelComponent, FileListComponent, ContextMenuComponent, ImageViewerComponent, ExplorerToolbarComponent, InputModalComponent, ConflictResolutionModalComponent],
+  imports: [TreePanelComponent, FileListComponent, ContextMenuComponent, ImageViewerComponent, VideoViewerComponent, ExplorerToolbarComponent, InputModalComponent, ConflictResolutionModalComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
     '(document:click)': 'closeContextMenu()',
@@ -160,6 +161,19 @@ interface BreadcrumbItem {
         (next)="showNextImage()"
       />
 
+      <app-video-viewer
+        [open]="isVideoViewerOpen()"
+        [videoUrl]="viewerVideoUrl()"
+        [videoName]="viewerVideoName()"
+        [canPrev]="canShowPreviousVideo()"
+        [canNext]="canShowNextVideo()"
+        [videoIndex]="viewerVideoIndex()"
+        [totalVideos]="viewerVideoPaths().length"
+        (close)="closeVideoViewer()"
+        (prev)="showPreviousVideo()"
+        (next)="showNextVideo()"
+      />
+
       <app-input-modal
         [open]="activeModal() !== null"
         [title]="activeModal()?.title ?? ''"
@@ -204,6 +218,11 @@ export class ExplorerPage {
   readonly viewerImageName = signal('Imagen');
   readonly viewerImagePaths = signal<string[]>([]);
   readonly viewerImageIndex = signal(-1);
+  readonly isVideoViewerOpen = signal(false);
+  readonly viewerVideoUrl = signal<string | null>(null);
+  readonly viewerVideoName = signal('Video');
+  readonly viewerVideoPaths = signal<string[]>([]);
+  readonly viewerVideoIndex = signal(-1);
   readonly selectedPaths = signal<string[]>([]);
   readonly searching = signal(false);
   readonly activeModal = signal<ActiveModalConfig | null>(null);
@@ -238,6 +257,15 @@ export class ExplorerPage {
       this.isImageViewerOpen() &&
       this.viewerImageIndex() >= 0 &&
       this.viewerImageIndex() < this.viewerImagePaths().length - 1
+  );
+  readonly canShowPreviousVideo = computed(
+    () => this.isVideoViewerOpen() && this.viewerVideoIndex() > 0 && this.viewerVideoPaths().length > 1
+  );
+  readonly canShowNextVideo = computed(
+    () =>
+      this.isVideoViewerOpen() &&
+      this.viewerVideoIndex() >= 0 &&
+      this.viewerVideoIndex() < this.viewerVideoPaths().length - 1
   );
   readonly breadcrumbs = computed<BreadcrumbItem[]>(() => {
     const path = this.currentPath();
@@ -281,6 +309,7 @@ export class ExplorerPage {
     this.destroyRef.onDestroy(() => {
       this.clearThumbnails();
       this.clearViewerImageUrl();
+      this.clearViewerVideoUrl();
     });
 
     this.refresh();
@@ -349,6 +378,11 @@ export class ExplorerPage {
       return;
     }
 
+    if (this.isVideoItem(item)) {
+      this.openVideoViewerFromPath(item.path);
+      return;
+    }
+
     this.filesApi.preview(item.path).subscribe({
       next: (blob) => {
         const url = URL.createObjectURL(blob);
@@ -359,14 +393,16 @@ export class ExplorerPage {
   }
 
   runSearch(filters: SearchFilters): void {
-    if (!filters.q) {
+    const hasFilters = Boolean(filters.q || filters.type || filters.ext);
+    if (!hasFilters) {
       this.refresh();
       return;
     }
 
     this.page.set(1);
     this.searchFilters.set(filters);
-    this.feedback.info('SEARCH', `Buscando "${filters.q}"`);
+    const searchMessage = filters.q ? `Buscando "${filters.q}"` : 'Aplicando filtros de búsqueda';
+    this.feedback.info('SEARCH', searchMessage);
     this.persistState();
     this.loadItems();
   }
@@ -653,6 +689,13 @@ export class ExplorerPage {
     this.viewerImagePaths.set([]);
   }
 
+  closeVideoViewer(): void {
+    this.isVideoViewerOpen.set(false);
+    this.clearViewerVideoUrl();
+    this.viewerVideoIndex.set(-1);
+    this.viewerVideoPaths.set([]);
+  }
+
   showPreviousImage(): void {
     const previousIndex = this.viewerImageIndex() - 1;
     if (previousIndex < 0) {
@@ -669,6 +712,24 @@ export class ExplorerPage {
     }
 
     this.loadViewerImageByIndex(nextIndex);
+  }
+
+  showPreviousVideo(): void {
+    const previousIndex = this.viewerVideoIndex() - 1;
+    if (previousIndex < 0) {
+      return;
+    }
+
+    this.loadViewerVideoByIndex(previousIndex);
+  }
+
+  showNextVideo(): void {
+    const nextIndex = this.viewerVideoIndex() + 1;
+    if (nextIndex >= this.viewerVideoPaths().length) {
+      return;
+    }
+
+    this.loadViewerVideoByIndex(nextIndex);
   }
 
   handleMoveItems(event: { sources: string[]; destination: string }): void {
@@ -739,7 +800,7 @@ export class ExplorerPage {
   private loadItems(): void {
     const filters = this.searchFilters();
 
-    if (filters?.q) {
+    if (filters && (filters.q || filters.type || filters.ext)) {
       this.searching.set(true);
       this.searchApi
         .search({
@@ -820,20 +881,160 @@ export class ExplorerPage {
     this.clearThumbnails();
 
     for (const item of items) {
-      if (!this.isImageItem(item)) {
+      if (!this.isImageItem(item) && !this.isVideoItem(item)) {
+        continue;
+      }
+
+      if (this.isVideoItem(item)) {
+        this.filesApi.preview(item.path).subscribe({
+          next: (blob) => {
+            void this.createVideoThumbnail(blob).then((objectUrl) => {
+              if (!objectUrl) {
+                return;
+              }
+
+              this.thumbnailUrls.update((current) => ({
+                ...current,
+                [item.path]: objectUrl,
+              }));
+            });
+          },
+          error: () => {},
+        });
         continue;
       }
 
       this.filesApi.thumbnail(item.path, 64).subscribe({
         next: (blob) => {
+          if (blob.size === 0) {
+            this.filesApi.preview(item.path).subscribe({
+              next: (previewBlob) => {
+                const objectUrl = URL.createObjectURL(previewBlob);
+                this.thumbnailUrls.update((current) => ({
+                  ...current,
+                  [item.path]: objectUrl,
+                }));
+              },
+              error: () => {},
+            });
+            return;
+          }
+
           const objectUrl = URL.createObjectURL(blob);
           this.thumbnailUrls.update((current) => ({
             ...current,
             [item.path]: objectUrl,
           }));
         },
-        error: () => {},
+        error: () => {
+          this.filesApi.preview(item.path).subscribe({
+            next: (blob) => {
+              const objectUrl = URL.createObjectURL(blob);
+              this.thumbnailUrls.update((current) => ({
+                ...current,
+                [item.path]: objectUrl,
+              }));
+            },
+            error: () => {},
+          });
+        },
       });
+    }
+  }
+
+  private async createVideoThumbnail(videoBlob: Blob): Promise<string | null> {
+    const videoUrl = URL.createObjectURL(videoBlob);
+    const video = document.createElement('video');
+    video.preload = 'metadata';
+    video.muted = true;
+    video.playsInline = true;
+    video.src = videoUrl;
+
+    const seekTo = async (time: number): Promise<void> => {
+      await new Promise<void>((resolve, reject) => {
+        const onSeeked = (): void => {
+          cleanup();
+          resolve();
+        };
+
+        const onError = (): void => {
+          cleanup();
+          reject(new Error('seek failed'));
+        };
+
+        const cleanup = (): void => {
+          video.removeEventListener('seeked', onSeeked);
+          video.removeEventListener('error', onError);
+        };
+
+        video.addEventListener('seeked', onSeeked, { once: true });
+        video.addEventListener('error', onError, { once: true });
+        video.currentTime = time;
+      });
+    };
+
+    try {
+      await new Promise<void>((resolve, reject) => {
+        const onLoaded = (): void => {
+          cleanup();
+          resolve();
+        };
+
+        const onError = (): void => {
+          cleanup();
+          reject(new Error('metadata load failed'));
+        };
+
+        const cleanup = (): void => {
+          video.removeEventListener('loadeddata', onLoaded);
+          video.removeEventListener('error', onError);
+        };
+
+        video.addEventListener('loadeddata', onLoaded, { once: true });
+        video.addEventListener('error', onError, { once: true });
+      });
+
+      const duration = Number.isFinite(video.duration) ? Math.max(video.duration, 0) : 0;
+      const targetTime = duration > 0 ? Math.min(1, duration / 4) : 0;
+      await seekTo(targetTime);
+
+      const sourceWidth = video.videoWidth || 0;
+      const sourceHeight = video.videoHeight || 0;
+      if (sourceWidth <= 0 || sourceHeight <= 0) {
+        return null;
+      }
+
+      const maxSize = 64;
+      const scale = Math.min(1, maxSize / Math.max(sourceWidth, sourceHeight));
+      const targetWidth = Math.max(1, Math.round(sourceWidth * scale));
+      const targetHeight = Math.max(1, Math.round(sourceHeight * scale));
+
+      const canvas = document.createElement('canvas');
+      canvas.width = targetWidth;
+      canvas.height = targetHeight;
+
+      const context = canvas.getContext('2d');
+      if (!context) {
+        return null;
+      }
+
+      context.drawImage(video, 0, 0, targetWidth, targetHeight);
+
+      const imageBlob = await new Promise<Blob | null>((resolve) => {
+        canvas.toBlob((blob) => resolve(blob), 'image/jpeg', 0.8);
+      });
+
+      if (!imageBlob) {
+        return null;
+      }
+
+      return URL.createObjectURL(imageBlob);
+    } catch {
+      return null;
+    } finally {
+      URL.revokeObjectURL(videoUrl);
+      video.removeAttribute('src');
+      video.load();
     }
   }
 
@@ -847,6 +1048,18 @@ export class ExplorerPage {
     }
 
     return item.mime_type?.startsWith('image/') ?? false;
+  }
+
+  private isVideoItem(item: FileItem): boolean {
+    if (this.isDirectoryItem(item)) {
+      return false;
+    }
+
+    if (item.is_video === true) {
+      return true;
+    }
+
+    return item.mime_type?.startsWith('video/') ?? false;
   }
 
   private isDirectoryItem(item: FileItem): boolean {
@@ -863,10 +1076,19 @@ export class ExplorerPage {
   }
 
   private openImageViewer(objectUrl: string, imageName: string): void {
+    this.closeVideoViewer();
     this.clearViewerImageUrl();
     this.viewerImageUrl.set(objectUrl);
     this.viewerImageName.set(imageName);
     this.isImageViewerOpen.set(true);
+  }
+
+  private openVideoViewer(objectUrl: string, videoName: string): void {
+    this.closeImageViewer();
+    this.clearViewerVideoUrl();
+    this.viewerVideoUrl.set(objectUrl);
+    this.viewerVideoName.set(videoName);
+    this.isVideoViewerOpen.set(true);
   }
 
   private openImageViewerFromPath(path: string): void {
@@ -908,12 +1130,59 @@ export class ExplorerPage {
     });
   }
 
+  private openVideoViewerFromPath(path: string): void {
+    const videoItems = this.items().filter((item) => this.isVideoItem(item));
+    const videoPaths = videoItems.map((item) => item.path);
+
+    if (videoPaths.length === 0) {
+      this.feedback.warning('VIEWER', 'No hay videos en la vista actual.');
+      return;
+    }
+
+    const targetIndex = videoPaths.indexOf(path);
+    if (targetIndex === -1) {
+      this.feedback.warning('VIEWER', 'El video seleccionado no está disponible en la página actual.');
+      return;
+    }
+
+    this.viewerVideoPaths.set(videoPaths);
+    this.loadViewerVideoByIndex(targetIndex);
+  }
+
+  private loadViewerVideoByIndex(index: number): void {
+    const paths = this.viewerVideoPaths();
+    const targetPath = paths[index];
+    if (!targetPath) {
+      return;
+    }
+
+    this.filesApi.preview(targetPath).subscribe({
+      next: (blob) => {
+        const objectUrl = URL.createObjectURL(blob);
+        const item = this.items().find((entry) => entry.path === targetPath);
+        const videoName = item?.name ?? targetPath.split('/').pop() ?? 'Video';
+
+        this.viewerVideoIndex.set(index);
+        this.openVideoViewer(objectUrl, videoName);
+      },
+      error: () => {},
+    });
+  }
+
   private clearViewerImageUrl(): void {
     const current = this.viewerImageUrl();
     if (current) {
       URL.revokeObjectURL(current);
     }
     this.viewerImageUrl.set(null);
+  }
+
+  private clearViewerVideoUrl(): void {
+    const current = this.viewerVideoUrl();
+    if (current) {
+      URL.revokeObjectURL(current);
+    }
+    this.viewerVideoUrl.set(null);
   }
 
   private updateCurrentPath(path: string, pushHistory: boolean): void {

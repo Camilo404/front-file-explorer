@@ -13,25 +13,15 @@ export interface SearchFilters {
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <form class="flex flex-col gap-3 sm:flex-row sm:items-center" [formGroup]="form" (ngSubmit)="onSearch()">
-      <div class="relative flex-1">
-        <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"></i>
-        <input
-          type="text"
-          formControlName="q"
-          placeholder="Buscar archivos o carpetas..."
-          class="w-full rounded-lg border border-white/10 bg-white/5 py-2 pl-10 pr-4 text-sm text-slate-200 placeholder-slate-400 transition-colors focus:border-sky-500/50 focus:bg-white/10 focus:outline-none focus:ring-1 focus:ring-sky-500/50"
-        />
-      </div>
-
-      <div class="flex gap-2 sm:w-auto">
-        <div class="relative w-32">
-          <i class="fa-solid fa-filter absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"></i>
-          <select formControlName="type" class="w-full appearance-none rounded-lg border border-white/10 bg-white/5 py-2 pl-9 pr-8 text-sm text-slate-200 transition-colors focus:border-sky-500/50 focus:bg-white/10 focus:outline-none focus:ring-1 focus:ring-sky-500/50">
-            <option value="" class="bg-slate-800">Cualquiera</option>
-            <option value="file" class="bg-slate-800">Archivo</option>
-            <option value="dir" class="bg-slate-800">Carpeta</option>
-          </select>
-          <i class="fa-solid fa-chevron-down absolute right-3 top-1/2 -translate-y-1/2 text-xs text-slate-400 pointer-events-none"></i>
+      <div class="flex flex-1 gap-2">
+        <div class="relative flex-1">
+          <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"></i>
+          <input
+            type="text"
+            formControlName="q"
+            placeholder="Buscar archivos o carpetas..."
+            class="w-full rounded-lg border border-white/10 bg-white/5 py-2 pl-10 pr-4 text-sm text-slate-200 placeholder-slate-400 transition-colors focus:border-sky-500/50 focus:bg-white/10 focus:outline-none focus:ring-1 focus:ring-sky-500/50"
+          />
         </div>
 
         <div class="relative w-24">
@@ -41,6 +31,18 @@ export interface SearchFilters {
             placeholder=".ext"
             class="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-slate-200 placeholder-slate-400 transition-colors focus:border-sky-500/50 focus:bg-white/10 focus:outline-none focus:ring-1 focus:ring-sky-500/50"
           />
+        </div>
+      </div>
+
+      <div class="flex gap-2 sm:w-auto">
+        <div class="relative w-36">
+          <i class="fa-solid fa-filter absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"></i>
+          <select formControlName="type" class="w-full appearance-none rounded-lg border border-white/10 bg-white/5 py-2 pl-9 pr-8 text-sm text-slate-200 transition-colors focus:border-sky-500/50 focus:bg-white/10 focus:outline-none focus:ring-1 focus:ring-sky-500/50">
+            <option value="" class="bg-slate-800">Cualquiera</option>
+            <option value="file" class="bg-slate-800">Archivo</option>
+            <option value="dir" class="bg-slate-800">Carpeta</option>
+          </select>
+          <i class="fa-solid fa-chevron-down absolute right-3 top-1/2 -translate-y-1/2 text-xs text-slate-400 pointer-events-none"></i>
         </div>
       </div>
 

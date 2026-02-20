@@ -45,6 +45,7 @@ export interface FileItem {
   preview_url?: string;
   thumbnail_url?: string;
   is_image?: boolean;
+  is_video?: boolean;
   modified_at: string;
   created_at: string;
   match_context?: string;

@@ -207,7 +207,7 @@ import { SearchFilters, SearchPanelComponent } from './search-panel.component';
                 <td class="overflow-hidden px-2 py-3 sm:px-4">
                   <div class="flex min-w-0 items-center gap-3">
                     <div class="flex size-8 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-white/5 shadow-inner">
-                      @if (isImage(item) && thumbnailUrl(item.path)) {
+                      @if (isMedia(item) && thumbnailUrl(item.path)) {
                         <img
                           [src]="thumbnailUrl(item.path)"
                           [alt]="item.name"
@@ -217,6 +217,8 @@ import { SearchFilters, SearchPanelComponent } from './search-panel.component';
                       } @else {
                         @if (isDirectory(item)) {
                           <i class="fa-solid fa-folder text-sky-400"></i>
+                        } @else if (isVideo(item)) {
+                          <i class="fa-solid fa-file-video text-violet-300"></i>
                         } @else {
                           <i class="fa-solid fa-file text-slate-400"></i>
                         }
@@ -528,6 +530,16 @@ export class FileListComponent {
     if (this.isDirectory(item)) return false;
     if (item.is_image === true) return true;
     return item.mime_type?.startsWith('image/') ?? false;
+  }
+
+  isVideo(item: FileItem): boolean {
+    if (this.isDirectory(item)) return false;
+    if (item.is_video === true) return true;
+    return item.mime_type?.startsWith('video/') ?? false;
+  }
+
+  isMedia(item: FileItem): boolean {
+    return this.isImage(item) || this.isVideo(item);
   }
 
   thumbnailUrl(path: string): string | undefined {

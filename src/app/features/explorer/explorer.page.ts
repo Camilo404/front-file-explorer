@@ -1186,17 +1186,14 @@ export class ExplorerPage {
       return;
     }
 
-    this.filesApi.preview(targetPath).subscribe({
-      next: (blob) => {
-        const objectUrl = URL.createObjectURL(blob);
-        const item = this.items().find((entry) => entry.path === targetPath);
-        const videoName = item?.name ?? targetPath.split('/').pop() ?? 'Video';
+    // Use a direct URL so the browser <video> element can send Range requests
+    // (HTTP 206 Partial Content) instead of downloading the entire file.
+    const directUrl = this.filesApi.streamUrl(targetPath);
+    const item = this.items().find((entry) => entry.path === targetPath);
+    const videoName = item?.name ?? targetPath.split('/').pop() ?? 'Video';
 
-        this.viewerVideoIndex.set(index);
-        this.openVideoViewer(objectUrl, videoName);
-      },
-      error: () => {},
-    });
+    this.viewerVideoIndex.set(index);
+    this.openVideoViewer(directUrl, videoName);
   }
 
   private clearViewerImageUrl(): void {
@@ -1208,10 +1205,6 @@ export class ExplorerPage {
   }
 
   private clearViewerVideoUrl(): void {
-    const current = this.viewerVideoUrl();
-    if (current) {
-      URL.revokeObjectURL(current);
-    }
     this.viewerVideoUrl.set(null);
   }
 

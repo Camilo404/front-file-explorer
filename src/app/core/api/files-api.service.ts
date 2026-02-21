@@ -3,10 +3,14 @@ import { inject, Injectable } from '@angular/core';
 import { map, Observable } from 'rxjs';
 
 import { ApiResponse, FileItem, UploadResponse } from '../models/api.models';
+import { AuthStoreService } from '../auth/auth-store.service';
+import { API_BASE_URL } from '../http/api-base-url.token';
 
 @Injectable({ providedIn: 'root' })
 export class FilesApiService {
   private readonly http = inject(HttpClient);
+  private readonly authStore = inject(AuthStoreService);
+  private readonly apiBaseUrl = inject(API_BASE_URL);
 
   upload(path: string, files: File[], conflictPolicy?: string): Observable<UploadResponse> {
     const formData = new FormData();
@@ -52,5 +56,18 @@ export class FilesApiService {
     return this.http
       .get<ApiResponse<FileItem>>('/api/v1/files/info', { params })
       .pipe(map((response) => response.data as FileItem));
+  }
+
+  /**
+   * Returns a direct URL to the preview endpoint with the auth token embedded
+   * as a query parameter. This allows native `<video>` / `<audio>` elements to
+   * stream content with Range request support (HTTP 206 Partial Content) instead
+   * of downloading the entire file into memory first.
+   */
+  streamUrl(path: string): string {
+    const base = this.apiBaseUrl.replace(/\/$/, '');
+    const token = this.authStore.accessToken;
+    const params = new URLSearchParams({ path, token: token ?? '' });
+    return `${base}/api/v1/files/preview?${params.toString()}`;
   }
 }

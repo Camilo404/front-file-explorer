@@ -916,20 +916,19 @@ export class ExplorerPage {
       }
 
       if (this.isVideoItem(item)) {
-        this.filesApi.preview(item.path).subscribe({
-          next: (blob) => {
-            void this.createVideoThumbnail(blob).then((objectUrl) => {
-              if (!objectUrl) {
-                return;
-              }
+        // Use a direct streaming URL so the <video> element only fetches
+        // metadata + a single frame via Range requests (~few KB) instead of
+        // downloading the entire video file.
+        const streamUrl = this.filesApi.streamUrl(item.path);
+        void this.createVideoThumbnail(streamUrl).then((objectUrl) => {
+          if (!objectUrl) {
+            return;
+          }
 
-              this.thumbnailUrls.update((current) => ({
-                ...current,
-                [item.path]: objectUrl,
-              }));
-            });
-          },
-          error: () => {},
+          this.thumbnailUrls.update((current) => ({
+            ...current,
+            [item.path]: objectUrl,
+          }));
         });
         continue;
       }
@@ -972,13 +971,19 @@ export class ExplorerPage {
     }
   }
 
-  private async createVideoThumbnail(videoBlob: Blob): Promise<string | null> {
-    const videoUrl = URL.createObjectURL(videoBlob);
+  /**
+   * Creates a small JPEG thumbnail from a video URL by loading only its
+   * metadata via Range requests, seeking to a frame, and painting it on
+   * a canvas. The browser only downloads the bytes it needs (~KB) instead
+   * of the entire video file.
+   */
+  private async createVideoThumbnail(videoSrc: string): Promise<string | null> {
     const video = document.createElement('video');
     video.preload = 'metadata';
     video.muted = true;
     video.playsInline = true;
-    video.src = videoUrl;
+    video.crossOrigin = 'use-credentials';
+    video.src = videoSrc;
 
     const seekTo = async (time: number): Promise<void> => {
       await new Promise<void>((resolve, reject) => {
@@ -1062,7 +1067,6 @@ export class ExplorerPage {
     } catch {
       return null;
     } finally {
-      URL.revokeObjectURL(videoUrl);
       video.removeAttribute('src');
       video.load();
     }

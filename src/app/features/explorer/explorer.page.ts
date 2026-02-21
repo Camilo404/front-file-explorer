@@ -915,37 +915,10 @@ export class ExplorerPage {
         continue;
       }
 
-      if (this.isVideoItem(item)) {
-        // Use a direct streaming URL so the <video> element only fetches
-        // metadata + a single frame via Range requests (~few KB) instead of
-        // downloading the entire video file.
-        const streamUrl = this.filesApi.streamUrl(item.path);
-        void this.createVideoThumbnail(streamUrl).then((objectUrl) => {
-          if (!objectUrl) {
-            return;
-          }
-
-          this.thumbnailUrls.update((current) => ({
-            ...current,
-            [item.path]: objectUrl,
-          }));
-        });
-        continue;
-      }
-
+      // All thumbnails (images + videos) are generated server-side.
       this.filesApi.thumbnail(item.path, 512).subscribe({
         next: (blob) => {
           if (blob.size === 0) {
-            this.filesApi.preview(item.path).subscribe({
-              next: (previewBlob) => {
-                const objectUrl = URL.createObjectURL(previewBlob);
-                this.thumbnailUrls.update((current) => ({
-                  ...current,
-                  [item.path]: objectUrl,
-                }));
-              },
-              error: () => {},
-            });
             return;
           }
 
@@ -955,120 +928,8 @@ export class ExplorerPage {
             [item.path]: objectUrl,
           }));
         },
-        error: () => {
-          this.filesApi.preview(item.path).subscribe({
-            next: (blob) => {
-              const objectUrl = URL.createObjectURL(blob);
-              this.thumbnailUrls.update((current) => ({
-                ...current,
-                [item.path]: objectUrl,
-              }));
-            },
-            error: () => {},
-          });
-        },
+        error: () => {},
       });
-    }
-  }
-
-  /**
-   * Creates a small JPEG thumbnail from a video URL by loading only its
-   * metadata via Range requests, seeking to a frame, and painting it on
-   * a canvas. The browser only downloads the bytes it needs (~KB) instead
-   * of the entire video file.
-   */
-  private async createVideoThumbnail(videoSrc: string): Promise<string | null> {
-    const video = document.createElement('video');
-    video.preload = 'metadata';
-    video.muted = true;
-    video.playsInline = true;
-    video.crossOrigin = 'use-credentials';
-    video.src = videoSrc;
-
-    const seekTo = async (time: number): Promise<void> => {
-      await new Promise<void>((resolve, reject) => {
-        const onSeeked = (): void => {
-          cleanup();
-          resolve();
-        };
-
-        const onError = (): void => {
-          cleanup();
-          reject(new Error('seek failed'));
-        };
-
-        const cleanup = (): void => {
-          video.removeEventListener('seeked', onSeeked);
-          video.removeEventListener('error', onError);
-        };
-
-        video.addEventListener('seeked', onSeeked, { once: true });
-        video.addEventListener('error', onError, { once: true });
-        video.currentTime = time;
-      });
-    };
-
-    try {
-      await new Promise<void>((resolve, reject) => {
-        const onLoaded = (): void => {
-          cleanup();
-          resolve();
-        };
-
-        const onError = (): void => {
-          cleanup();
-          reject(new Error('metadata load failed'));
-        };
-
-        const cleanup = (): void => {
-          video.removeEventListener('loadeddata', onLoaded);
-          video.removeEventListener('error', onError);
-        };
-
-        video.addEventListener('loadeddata', onLoaded, { once: true });
-        video.addEventListener('error', onError, { once: true });
-      });
-
-      const duration = Number.isFinite(video.duration) ? Math.max(video.duration, 0) : 0;
-      const targetTime = duration > 0 ? Math.min(1, duration / 4) : 0;
-      await seekTo(targetTime);
-
-      const sourceWidth = video.videoWidth || 0;
-      const sourceHeight = video.videoHeight || 0;
-      if (sourceWidth <= 0 || sourceHeight <= 0) {
-        return null;
-      }
-
-      const maxSize = 64;
-      const scale = Math.min(1, maxSize / Math.max(sourceWidth, sourceHeight));
-      const targetWidth = Math.max(1, Math.round(sourceWidth * scale));
-      const targetHeight = Math.max(1, Math.round(sourceHeight * scale));
-
-      const canvas = document.createElement('canvas');
-      canvas.width = targetWidth;
-      canvas.height = targetHeight;
-
-      const context = canvas.getContext('2d');
-      if (!context) {
-        return null;
-      }
-
-      context.drawImage(video, 0, 0, targetWidth, targetHeight);
-
-      const imageBlob = await new Promise<Blob | null>((resolve) => {
-        canvas.toBlob((blob) => resolve(blob), 'image/jpeg', 0.8);
-      });
-
-      if (!imageBlob) {
-        return null;
-      }
-
-      return URL.createObjectURL(imageBlob);
-    } catch {
-      return null;
-    } finally {
-      video.removeAttribute('src');
-      video.load();
     }
   }
 

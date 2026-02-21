@@ -86,7 +86,7 @@ import { UploadEntry } from '../../core/uploads/upload.models';
                       <i class="fa-solid fa-clock text-xs text-zinc-500"></i>
                     }
                     @case ('uploading') {
-                      <i class="fa-solid fa-spinner fa-spin text-xs text-violet-400"></i>
+                      <i class="fa-solid fa-spinner animate-spin text-xs text-violet-400"></i>
                     }
                     @case ('done') {
                       <i class="fa-solid fa-check text-xs text-emerald-400"></i>

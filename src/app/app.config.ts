@@ -14,7 +14,7 @@ export const appConfig: ApplicationConfig = {
     provideRouter(routes),
     {
       provide: API_BASE_URL,
-      useValue: 'http://localhost:8080',
+      useValue: '',
     },
     provideHttpClient(withInterceptors([apiBaseUrlInterceptor, errorInterceptor, authInterceptor])),
   ],

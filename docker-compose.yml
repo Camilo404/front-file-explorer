@@ -1,0 +1,11 @@
+services:
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: front-file-explorer-web
+    environment:
+      BACKEND_URL: ${BACKEND_URL:-http://192.168.1.42:8080}
+    ports:
+      - "4200:80"
+    restart: unless-stopped

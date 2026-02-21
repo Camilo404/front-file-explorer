@@ -1,6 +1,7 @@
 import { Routes } from '@angular/router';
 
 import { authGuard } from './core/guards/auth.guard';
+import { noForcePasswordChangeGuard, requireForcePasswordChangeGuard } from './core/guards/force-password-change.guard';
 import { roleGuard } from './core/guards/role.guard';
 
 export const routes: Routes = [
@@ -9,8 +10,14 @@ export const routes: Routes = [
 		loadComponent: () => import('./features/auth/login.page').then((m) => m.LoginPage),
 	},
 	{
+		path: 'auth/force-change-password',
+		canActivate: [requireForcePasswordChangeGuard],
+		loadComponent: () =>
+			import('./features/auth/force-change-password.page').then((m) => m.ForceChangePasswordPage),
+	},
+	{
 		path: '',
-		canActivate: [authGuard],
+		canActivate: [authGuard, noForcePasswordChangeGuard],
 		loadComponent: () => import('./features/layout/shell.component').then((m) => m.ShellComponent),
 		children: [
 			{

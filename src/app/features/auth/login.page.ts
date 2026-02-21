@@ -114,7 +114,12 @@ export class LoginPage {
     this.authStore.login(this.form.getRawValue()).subscribe({
       next: () => {
         this.loading.set(false);
-        void this.router.navigate(['/explorer']);
+
+        if (this.authStore.forcePasswordChange()) {
+          void this.router.navigate(['/auth/force-change-password']);
+        } else {
+          void this.router.navigate(['/explorer']);
+        }
       },
       error: (error: { error?: { error?: { message?: string } } }) => {
         this.loading.set(false);

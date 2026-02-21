@@ -24,6 +24,7 @@ export interface AuthUser {
   id: string;
   username: string;
   role: UserRole;
+  force_password_change?: boolean;
 }
 
 export interface TokenPair {
@@ -32,6 +33,7 @@ export interface TokenPair {
   token_type: string;
   expires_in: number;
   user: AuthUser;
+  force_password_change?: boolean;
 }
 
 export interface FileItem {

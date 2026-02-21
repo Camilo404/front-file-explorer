@@ -910,27 +910,17 @@ export class ExplorerPage {
   private loadThumbnails(items: FileItem[]): void {
     this.clearThumbnails();
 
+    const urls: Record<string, string> = {};
+
     for (const item of items) {
       if (!this.isImageItem(item) && !this.isVideoItem(item)) {
         continue;
       }
 
-      // All thumbnails (images + videos) are generated server-side.
-      this.filesApi.thumbnail(item.path, 512).subscribe({
-        next: (blob) => {
-          if (blob.size === 0) {
-            return;
-          }
-
-          const objectUrl = URL.createObjectURL(blob);
-          this.thumbnailUrls.update((current) => ({
-            ...current,
-            [item.path]: objectUrl,
-          }));
-        },
-        error: () => {},
-      });
+      urls[item.path] = this.filesApi.thumbnailDirectUrl(item.path, 512);
     }
+
+    this.thumbnailUrls.set(urls);
   }
 
   private isImageItem(item: FileItem): boolean {
@@ -963,10 +953,6 @@ export class ExplorerPage {
   }
 
   private clearThumbnails(): void {
-    const currentThumbnails = this.thumbnailUrls();
-    for (const path of Object.keys(currentThumbnails)) {
-      URL.revokeObjectURL(currentThumbnails[path]);
-    }
     this.thumbnailUrls.set({});
   }
 

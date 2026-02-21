@@ -70,4 +70,20 @@ export class FilesApiService {
     const params = new URLSearchParams({ path, token: token ?? '' });
     return `${base}/api/v1/files/preview?${params.toString()}`;
   }
+
+  /**
+   * Returns a direct URL to the thumbnail endpoint with the auth token embedded
+   * as a query parameter. The browser fetches and caches the image natively
+   * without an intermediate blob download.
+   */
+  thumbnailDirectUrl(path: string, size = 512): string {
+    const base = this.apiBaseUrl.replace(/\/$/, '');
+    const token = this.authStore.accessToken;
+    const params = new URLSearchParams({
+      path,
+      size: String(size),
+      token: token ?? '',
+    });
+    return `${base}/api/v1/files/thumbnail?${params.toString()}`;
+  }
 }

@@ -6,10 +6,11 @@ import { AuthApiService } from '../../core/api/auth-api.service';
 import { SystemApiService } from '../../core/api/system-api.service';
 import { AuthStoreService } from '../../core/auth/auth-store.service';
 import { ErrorStoreService } from '../../core/errors/error-store.service';
+import { UploadProgressPanelComponent } from '../../shared/components/upload-progress-panel.component';
 
 @Component({
   selector: 'app-shell',
-  imports: [RouterLink, RouterLinkActive, RouterOutlet, ReactiveFormsModule],
+  imports: [RouterLink, RouterLinkActive, RouterOutlet, ReactiveFormsModule, UploadProgressPanelComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
     '(document:keydown.escape)': 'closeMobileMenu()',
@@ -462,6 +463,8 @@ import { ErrorStoreService } from '../../core/errors/error-store.service';
           </div>
         </main>
       </div>
+
+      <app-upload-progress-panel />
     </div>
   `,
 })

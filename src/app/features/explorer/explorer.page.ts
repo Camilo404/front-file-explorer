@@ -1,5 +1,6 @@
 import { ChangeDetectionStrategy, Component, DestroyRef, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { HttpEventType } from '@angular/common/http';
 import { ActivatedRoute, Router } from '@angular/router';
 
 import { ExplorerApiService } from '../../core/api/explorer-api.service';
@@ -10,6 +11,7 @@ import { SharesApiService } from '../../core/api/shares-api.service';
 import { AuthStoreService } from '../../core/auth/auth-store.service';
 import { ErrorStoreService } from '../../core/errors/error-store.service';
 import { API_BASE_URL } from '../../core/http/api-base-url.token';
+import { UploadTrackerService } from '../../core/uploads/upload-tracker.service';
 import { FileItem, TreeNode } from '../../core/models/api.models';
 import { ContextMenuAction, ContextMenuComponent } from './components/context-menu.component';
 import { ExplorerToolbarComponent, SearchFilters } from './components/explorer-toolbar.component';
@@ -202,6 +204,7 @@ export class ExplorerPage {
   private readonly authStore = inject(AuthStoreService);
   private readonly apiBaseUrl = inject(API_BASE_URL);
   private readonly feedback = inject(ErrorStoreService);
+  private readonly uploadTracker = inject(UploadTrackerService);
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
   private readonly destroyRef = inject(DestroyRef);
@@ -451,8 +454,25 @@ export class ExplorerPage {
     }
 
     const files = Array.from(fileList);
-    this.filesApi.upload(this.currentPath(), files, 'skip').subscribe({
-      next: (response) => {
+    const entryIds = this.uploadTracker.startBatch(files);
+
+    this.filesApi.uploadWithProgress(this.currentPath(), files, 'skip').subscribe({
+      next: (event) => {
+        if (event.type === HttpEventType.UploadProgress) {
+          this.uploadTracker.updateBatchProgress(
+            entryIds,
+            event.loaded ?? 0,
+            event.total ?? files.reduce((s, f) => s + f.size, 0),
+          );
+          return;
+        }
+
+        if (event.type !== HttpEventType.Response || !event.body) {
+          return;
+        }
+
+        const response = event.body.data as import('../../core/models/api.models').UploadResponse;
+
         const conflictNames = response.failed
           .filter((f) => f.reason.includes('CONFLICT') || f.reason.includes('target already exists'))
           .map((f) => f.name);
@@ -460,6 +480,22 @@ export class ExplorerPage {
         const otherFailures = response.failed.filter(
           (f) => !f.reason.includes('CONFLICT') && !f.reason.includes('target already exists')
         );
+
+        // Mark individual entries as done or error
+        const failedNames = new Set(response.failed.map((f) => f.name));
+        for (let i = 0; i < files.length; i++) {
+          const failure = response.failed.find((f) => f.name === files[i].name);
+          if (failure) {
+            const isConflict = failure.reason.includes('CONFLICT') || failure.reason.includes('target already exists');
+            if (!isConflict) {
+              this.uploadTracker.markError(entryIds[i], failure.reason);
+            } else {
+              this.uploadTracker.markDone(entryIds[i]);
+            }
+          } else {
+            this.uploadTracker.markDone(entryIds[i]);
+          }
+        }
 
         if (conflictNames.length > 0) {
           this.pendingConflictFiles = files.filter((f) => conflictNames.includes(f.name));
@@ -484,7 +520,9 @@ export class ExplorerPage {
           this.refresh();
         }
       },
-      error: () => {},
+      error: () => {
+        this.uploadTracker.markBatchError(entryIds, 'Error de conexión');
+      },
     });
   }
 

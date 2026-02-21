@@ -1,4 +1,4 @@
-import { HttpClient, HttpParams } from '@angular/common/http';
+import { HttpClient, HttpEvent, HttpParams, HttpRequest } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { map, Observable } from 'rxjs';
 
@@ -31,6 +31,39 @@ export class FilesApiService {
     return this.http
       .post<ApiResponse<UploadResponse>>('/api/v1/files/upload', formData, { params })
       .pipe(map((response) => response.data as UploadResponse));
+  }
+
+  /**
+   * Uploads files with progress reporting.
+   * Emits `HttpEvent` objects including `HttpEventType.UploadProgress`
+   * so the caller can track bytes sent in real time.
+   */
+  uploadWithProgress(
+    path: string,
+    files: File[],
+    conflictPolicy?: string,
+  ): Observable<HttpEvent<ApiResponse<UploadResponse>>> {
+    const formData = new FormData();
+    formData.append('path', path);
+    if (conflictPolicy) {
+      formData.append('conflict_policy', conflictPolicy);
+    }
+
+    for (const file of files) {
+      formData.append('files', file, file.name);
+    }
+
+    let params = new HttpParams();
+    if (conflictPolicy) {
+      params = params.set('conflict_policy', conflictPolicy);
+    }
+
+    const req = new HttpRequest('POST', '/api/v1/files/upload', formData, {
+      params,
+      reportProgress: true,
+    });
+
+    return this.http.request<ApiResponse<UploadResponse>>(req);
   }
 
   download(path: string, archive = false): Observable<Blob> {

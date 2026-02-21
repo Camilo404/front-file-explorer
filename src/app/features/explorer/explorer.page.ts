@@ -12,6 +12,7 @@ import { AuthStoreService } from '../../core/auth/auth-store.service';
 import { ErrorStoreService } from '../../core/errors/error-store.service';
 import { API_BASE_URL } from '../../core/http/api-base-url.token';
 import { UploadTrackerService } from '../../core/uploads/upload-tracker.service';
+import { ChunkedUploadService, CHUNKED_UPLOAD_THRESHOLD } from '../../core/uploads/chunked-upload.service';
 import { FileItem, TreeNode } from '../../core/models/api.models';
 import { ContextMenuAction, ContextMenuComponent } from './components/context-menu.component';
 import { ExplorerToolbarComponent, SearchFilters } from './components/explorer-toolbar.component';
@@ -205,6 +206,7 @@ export class ExplorerPage {
   private readonly apiBaseUrl = inject(API_BASE_URL);
   private readonly feedback = inject(ErrorStoreService);
   private readonly uploadTracker = inject(UploadTrackerService);
+  private readonly chunkedUpload = inject(ChunkedUploadService);
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
   private readonly destroyRef = inject(DestroyRef);
@@ -453,7 +455,25 @@ export class ExplorerPage {
       return;
     }
 
-    const files = Array.from(fileList);
+    const allFiles = Array.from(fileList);
+    const smallFiles = allFiles.filter((f) => f.size < CHUNKED_UPLOAD_THRESHOLD);
+    const largeFiles = allFiles.filter((f) => f.size >= CHUNKED_UPLOAD_THRESHOLD);
+
+    // Upload small files via the classic single-request batch path.
+    if (smallFiles.length > 0) {
+      this.uploadSmallFiles(smallFiles);
+    }
+
+    // Upload large files via chunked upload (one at a time).
+    if (largeFiles.length > 0) {
+      this.uploadLargeFiles(largeFiles);
+    }
+  }
+
+  /**
+   * Classic single-request batch upload for files under the chunked threshold.
+   */
+  private uploadSmallFiles(files: File[]): void {
     const entryIds = this.uploadTracker.startBatch(files);
 
     this.filesApi.uploadWithProgress(this.currentPath(), files, 'skip').subscribe({
@@ -482,7 +502,6 @@ export class ExplorerPage {
         );
 
         // Mark individual entries as done or error
-        const failedNames = new Set(response.failed.map((f) => f.name));
         for (let i = 0; i < files.length; i++) {
           const failure = response.failed.find((f) => f.name === files[i].name);
           if (failure) {
@@ -524,6 +543,40 @@ export class ExplorerPage {
         this.uploadTracker.markBatchError(entryIds, 'Error de conexión');
       },
     });
+  }
+
+  /**
+   * Chunked upload for large files. Files are uploaded sequentially
+   * to avoid saturating the HDD with parallel writes.
+   */
+  private async uploadLargeFiles(files: File[]): Promise<void> {
+    const entryIds = this.uploadTracker.startBatch(files);
+    let successCount = 0;
+    let failCount = 0;
+
+    for (let i = 0; i < files.length; i++) {
+      try {
+        await this.chunkedUpload.uploadFile(
+          files[i],
+          this.currentPath(),
+          entryIds[i],
+          'skip',
+        );
+        this.uploadTracker.markDone(entryIds[i]);
+        successCount++;
+      } catch {
+        this.uploadTracker.markError(entryIds[i], 'Error en subida por fragmentos');
+        failCount++;
+      }
+    }
+
+    if (successCount > 0 || failCount > 0) {
+      this.feedback.success(
+        'CHUNKED_UPLOAD',
+        `Subida grande completada: ${successCount} exitosos${failCount > 0 ? `, ${failCount} fallidos` : ''}.`,
+      );
+      this.refresh();
+    }
   }
 
   onConflictResolve(policy: ConflictPolicy): void {

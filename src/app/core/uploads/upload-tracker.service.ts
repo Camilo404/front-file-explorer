@@ -85,6 +85,27 @@ export class UploadTrackerService {
     );
   }
 
+  /**
+   * Updates progress for a single tracked entry by loaded / total bytes.
+   * Used by chunked uploads where each file is tracked individually.
+   */
+  updateSingleProgress(id: string, loaded: number, total: number): void {
+    if (total <= 0) {
+      return;
+    }
+
+    const progress = Math.min(Math.round((loaded / total) * 100), 100);
+
+    this.entries.update((current) =>
+      current.map((entry) => {
+        if (entry.id !== id) {
+          return entry;
+        }
+        return { ...entry, loaded, total, progress, status: 'uploading' as const };
+      }),
+    );
+  }
+
   markDone(id: string): void {
     this.updateEntry(id, { status: 'done', progress: 100, loaded: 0 });
     this.entries.update((current) =>

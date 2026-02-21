@@ -1,11 +1,9 @@
 import { ChangeDetectionStrategy, Component, computed, input, output, signal } from '@angular/core';
 
 import { FileItem } from '../../../core/models/api.models';
-import { SearchFilters, SearchPanelComponent } from './search-panel.component';
 
 @Component({
   selector: 'app-file-list',
-  imports: [SearchPanelComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
     '(document:keydown)': 'onDocumentKeyDown($event)',
@@ -19,8 +17,6 @@ import { SearchFilters, SearchPanelComponent } from './search-panel.component';
       (drop)="onExternalDrop($event)"
     >
       <header class="flex shrink-0 flex-col gap-4 border-b border-white/5 bg-white/5 p-4 sm:gap-5 sm:p-5">
-        <app-search-panel (search)="search.emit($event)" (clearFilters)="clearSearch.emit()" />
-
         <!-- External file drop overlay -->
         @if (isExternalDragOver()) {
           <div
@@ -114,7 +110,7 @@ import { SearchFilters, SearchPanelComponent } from './search-panel.component';
       </header>
 
       <div
-        class="flex-1 overflow-y-auto overflow-x-hidden custom-scrollbar"
+        class="file-list-scrollbar flex-1 overflow-y-auto overflow-x-hidden"
         role="presentation"
         tabindex="-1"
         (click)="onContainerClick($event)"
@@ -431,6 +427,32 @@ import { SearchFilters, SearchPanelComponent } from './search-panel.component';
       </div>
     </section>
   `,
+  styles: `
+    .file-list-scrollbar {
+      scrollbar-width: thin;
+      scrollbar-color: rgb(139 92 246 / 0.65) rgb(255 255 255 / 0.06);
+    }
+
+    .file-list-scrollbar::-webkit-scrollbar {
+      width: 10px;
+      height: 10px;
+    }
+
+    .file-list-scrollbar::-webkit-scrollbar-track {
+      background: rgb(255 255 255 / 0.04);
+      border-radius: 9999px;
+    }
+
+    .file-list-scrollbar::-webkit-scrollbar-thumb {
+      background: linear-gradient(180deg, rgb(167 139 250 / 0.75), rgb(139 92 246 / 0.8));
+      border-radius: 9999px;
+      border: 2px solid rgb(24 24 27 / 0.7);
+    }
+
+    .file-list-scrollbar::-webkit-scrollbar-thumb:hover {
+      background: linear-gradient(180deg, rgb(196 181 253 / 0.9), rgb(167 139 250 / 0.9));
+    }
+  `,
 })
 export class FileListComponent {
   readonly items = input<FileItem[]>([]);
@@ -447,8 +469,6 @@ export class FileListComponent {
   readonly selectionChange = output<string[]>();
   readonly info = output<string>();
   readonly contextMenu = output<{ event: MouseEvent; item: FileItem }>();
-  readonly search = output<SearchFilters>();
-  readonly clearSearch = output<void>();
   readonly changePage = output<number>();
   readonly navigateToParent = output<void>();
   readonly moveItems = output<{ sources: string[]; destination: string }>();

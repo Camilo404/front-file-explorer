@@ -37,6 +37,21 @@ export const routes: Routes = [
 				canActivate: [roleGuard(['admin'])],
 				loadComponent: () => import('./features/audit/audit.page').then((m) => m.AuditPage),
 			},
+			{
+				path: 'users',
+				canActivate: [roleGuard(['admin'])],
+				loadComponent: () => import('./features/users/users.page').then((m) => m.UsersPage),
+			},
+			{
+				path: 'shares',
+				canActivate: [roleGuard(['editor', 'admin'])],
+				loadComponent: () => import('./features/shares/shares.page').then((m) => m.SharesPage),
+			},
+			{
+				path: 'storage',
+				canActivate: [roleGuard(['admin'])],
+				loadComponent: () => import('./features/storage/storage.page').then((m) => m.StoragePage),
+			},
 		],
 	},
 	{

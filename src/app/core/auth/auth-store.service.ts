@@ -1,6 +1,6 @@
 import { inject, Injectable, signal } from '@angular/core';
 import { Router } from '@angular/router';
-import { Observable, of, tap } from 'rxjs';
+import { catchError, finalize, Observable, of, shareReplay, tap, throwError } from 'rxjs';
 
 import { AuthApiService, LoginRequest } from '../api/auth-api.service';
 import { AuthUser, TokenPair, UserRole } from '../models/api.models';
@@ -15,6 +15,7 @@ export class AuthStoreService {
   private readonly authApi = inject(AuthApiService);
   private readonly router = inject(Router);
   private refreshTimer: ReturnType<typeof setTimeout> | null = null;
+  private refreshRequest$: Observable<TokenPair> | null = null;
 
   readonly tokenPair = signal<TokenPair | null>(null);
   readonly user = signal<AuthUser | null>(null);
@@ -49,23 +50,33 @@ export class AuthStoreService {
 
   refresh(): Observable<TokenPair | null> {
     const refreshToken = this.refreshToken;
-    if (!refreshToken || this.isRefreshing()) {
+    if (!refreshToken) {
       return of(null);
     }
 
+    if (this.refreshRequest$) {
+      return this.refreshRequest$;
+    }
+
     this.isRefreshing.set(true);
-    return this.authApi.refresh({ refresh_token: refreshToken }).pipe(
-      tap({
-        next: (tokenPair) => {
-          this.setSession(tokenPair);
-          this.isRefreshing.set(false);
-        },
-        error: () => {
-          this.clearSession();
-          this.isRefreshing.set(false);
-        },
-      })
+
+    this.refreshRequest$ = this.authApi.refresh({ refresh_token: refreshToken }).pipe(
+      tap((tokenPair) => {
+        this.setSession(tokenPair);
+        this.isRefreshing.set(false);
+      }),
+      catchError((err) => {
+        this.clearSession();
+        this.isRefreshing.set(false);
+        return throwError(() => err);
+      }),
+      finalize(() => {
+        this.refreshRequest$ = null;
+      }),
+      shareReplay(1)
     );
+
+    return this.refreshRequest$;
   }
 
   logout(): Observable<boolean> {

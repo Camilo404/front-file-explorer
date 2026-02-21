@@ -10,9 +10,9 @@ import { TrashRecord } from '../../core/models/api.models';
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <section class="space-y-3">
-      <header class="flex items-center justify-between">
+      <header class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <h1 class="text-2xl font-bold tracking-tight text-zinc-100">Trash</h1>
-        <div class="flex items-center gap-2 text-xs">
+        <div class="flex flex-wrap items-center gap-2 text-xs">
           <input
             type="text"
             [value]="searchText()"
@@ -35,6 +35,15 @@ import { TrashRecord } from '../../core/models/api.models';
           >
             Refresh
           </button>
+          <button
+            type="button"
+            class="rounded-xl bg-red-500/10 px-4 py-2 text-sm font-medium text-red-400 transition-all hover:bg-red-500/20 hover:text-red-300 disabled:opacity-40"
+            [disabled]="emptyingTrash() || activeTrashCount() === 0"
+            (click)="emptyAllTrash()"
+          >
+            <i class="fa-solid fa-trash-can mr-1.5 text-xs"></i>
+            {{ emptyingTrash() ? 'Emptying...' : 'Empty Trash' }}
+          </button>
         </div>
       </header>
 
@@ -54,7 +63,7 @@ import { TrashRecord } from '../../core/models/api.models';
                   <th class="px-2 py-1">Deleted At</th>
                   <th class="px-2 py-1">Deleted By</th>
                   <th class="px-2 py-1">Status</th>
-                  <th class="px-2 py-1">Action</th>
+                  <th class="px-2 py-1">Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -71,14 +80,26 @@ import { TrashRecord } from '../../core/models/api.models';
                       }
                     </td>
                     <td class="px-2 py-1">
-                      <button
-                        type="button"
-                        class="rounded bg-emerald-700 px-2 py-1 hover:bg-emerald-600 disabled:cursor-not-allowed disabled:opacity-50"
-                        [disabled]="!canRestore(record) || restoringPath() === record.original_path"
-                        (click)="restore(record)"
-                      >
-                        Restore
-                      </button>
+                      <div class="flex items-center gap-1">
+                        <button
+                          type="button"
+                          class="rounded bg-emerald-700 px-2 py-1 hover:bg-emerald-600 disabled:cursor-not-allowed disabled:opacity-50"
+                          [disabled]="!canRestore(record) || restoringPath() === record.original_path"
+                          (click)="restore(record)"
+                        >
+                          Restore
+                        </button>
+                        @if (!record.restored_at) {
+                          <button
+                            type="button"
+                            class="rounded bg-red-700 px-2 py-1 hover:bg-red-600 disabled:cursor-not-allowed disabled:opacity-50"
+                            [disabled]="deletingId() === record.id"
+                            (click)="permanentDelete(record)"
+                          >
+                            {{ deletingId() === record.id ? '...' : 'Delete' }}
+                          </button>
+                        }
+                      </div>
                     </td>
                   </tr>
                 }
@@ -121,9 +142,13 @@ export class TrashPage {
   readonly includeRestored = signal(false);
   readonly loading = signal(false);
   readonly restoringPath = signal<string | null>(null);
+  readonly deletingId = signal<string | null>(null);
+  readonly emptyingTrash = signal(false);
   readonly searchText = signal('');
   readonly page = signal(1);
   readonly limit = signal(25);
+
+  readonly activeTrashCount = computed(() => this.records().filter((r) => !r.restored_at).length);
 
   readonly filteredRecords = computed(() => {
     const query = this.searchText().trim().toLowerCase();
@@ -212,6 +237,42 @@ export class TrashPage {
       },
       error: () => {
         this.restoringPath.set(null);
+      },
+    });
+  }
+
+  permanentDelete(record: TrashRecord): void {
+    if (!confirm(`Permanently delete "${record.original_path}"? This cannot be undone.`)) {
+      return;
+    }
+
+    this.deletingId.set(record.id);
+    this.trashApi.permanentDelete(record.id).subscribe({
+      next: () => {
+        this.feedback.success('TRASH', `Permanently deleted: ${record.original_path}`);
+        this.deletingId.set(null);
+        this.load();
+      },
+      error: () => {
+        this.deletingId.set(null);
+      },
+    });
+  }
+
+  emptyAllTrash(): void {
+    if (!confirm('Permanently delete ALL items in trash? This cannot be undone.')) {
+      return;
+    }
+
+    this.emptyingTrash.set(true);
+    this.trashApi.emptyTrash().subscribe({
+      next: (count) => {
+        this.feedback.success('TRASH', `Trash emptied. ${count} item${count !== 1 ? 's' : ''} permanently deleted.`);
+        this.emptyingTrash.set(false);
+        this.load();
+      },
+      error: () => {
+        this.emptyingTrash.set(false);
       },
     });
   }

@@ -1,7 +1,7 @@
 import { DOCUMENT } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject, input, output } from '@angular/core';
 
-export type ContextMenuAction = 'rename' | 'move' | 'copy' | 'delete' | 'download' | 'info';
+export type ContextMenuAction = 'rename' | 'move' | 'copy' | 'delete' | 'download' | 'info' | 'share';
 
 @Component({
   selector: 'app-context-menu',
@@ -78,6 +78,18 @@ export type ContextMenuAction = 'rename' | 'move' | 'copy' | 'delete' | 'downloa
           Descargar
         </button>
 
+        @if (canShare()) {
+          <button
+            type="button"
+            class="flex w-full items-center gap-2.5 rounded-lg px-2 py-1.5 text-left transition-colors hover:bg-white/10 hover:text-white disabled:opacity-50 disabled:hover:bg-transparent disabled:hover:text-zinc-200"
+            [disabled]="selectedCount() !== 1"
+            (click)="onAction('share')"
+          >
+            <i class="fa-solid fa-share-nodes fa-fw text-zinc-400"></i>
+            Compartir
+          </button>
+        }
+
         <button
           type="button"
           class="flex w-full items-center gap-2.5 rounded-lg px-2 py-1.5 text-left transition-colors hover:bg-white/10 hover:text-white disabled:opacity-50 disabled:hover:bg-transparent disabled:hover:text-zinc-200"
@@ -110,6 +122,7 @@ export class ContextMenuComponent {
   readonly x = input(0);
   readonly y = input(0);
   readonly selectedCount = input(0);
+  readonly canShare = input(false);
 
   readonly action = output<ContextMenuAction>();
   readonly close = output<void>();

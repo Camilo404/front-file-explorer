@@ -213,3 +213,37 @@ export interface AuditEntry {
 export interface AuditListData {
   items: AuditEntry[];
 }
+
+export interface StorageStats {
+  total_size: number;
+  total_size_human: string;
+  file_count: number;
+  directory_count: number;
+}
+
+export interface JobUpdate {
+  job_id: string;
+  status: string;
+  progress: number;
+  processed_items: number;
+  total_items: number;
+  success_items: number;
+  failed_items: number;
+}
+
+export interface ShareRecord {
+  id: string;
+  token: string;
+  path: string;
+  created_by: string;
+  created_at: string;
+  expires_at: string;
+}
+
+export interface ShareListData {
+  shares: ShareRecord[];
+}
+
+export interface UserListData {
+  users: AuthUser[];
+}

@@ -6,15 +6,18 @@ import { ExplorerApiService } from '../../core/api/explorer-api.service';
 import { FilesApiService } from '../../core/api/files-api.service';
 import { ConflictPolicy, OperationsApiService } from '../../core/api/operations-api.service';
 import { SearchApiService } from '../../core/api/search-api.service';
+import { SharesApiService } from '../../core/api/shares-api.service';
+import { AuthStoreService } from '../../core/auth/auth-store.service';
 import { ErrorStoreService } from '../../core/errors/error-store.service';
+import { API_BASE_URL } from '../../core/http/api-base-url.token';
 import { FileItem, TreeNode } from '../../core/models/api.models';
 import { ContextMenuAction, ContextMenuComponent } from './components/context-menu.component';
-import { ExplorerToolbarComponent } from './components/explorer-toolbar.component';
+import { ExplorerToolbarComponent, SearchFilters } from './components/explorer-toolbar.component';
 import { FileListComponent } from './components/file-list.component';
 import { ImageViewerComponent } from './components/image-viewer.component';
 import { VideoViewerComponent } from './components/video-viewer.component';
-import { SearchFilters } from './components/search-panel.component';
 import { TreePanelComponent } from './components/tree-panel.component';
+import { FileDetailsComponent } from './components/file-details.component';
 import { ConflictResolutionModalComponent } from '../../shared/components/conflict-resolution-modal.component';
 import { InputModalComponent } from '../../shared/components/input-modal.component';
 
@@ -36,21 +39,16 @@ interface ActiveModalConfig {
   isDanger?: boolean;
 }
 
-interface BreadcrumbItem {
-  label: string;
-  path: string;
-}
-
 @Component({
   selector: 'app-explorer-page',
-  imports: [TreePanelComponent, FileListComponent, ContextMenuComponent, ImageViewerComponent, VideoViewerComponent, ExplorerToolbarComponent, InputModalComponent, ConflictResolutionModalComponent],
+  imports: [TreePanelComponent, FileListComponent, ContextMenuComponent, ImageViewerComponent, VideoViewerComponent, ExplorerToolbarComponent, InputModalComponent, ConflictResolutionModalComponent, FileDetailsComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
     '(document:click)': 'closeContextMenu()',
   },
   template: `
-    <section class="space-y-4 p-2 sm:p-4">
-      <nav class="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-white/5 bg-zinc-900/40 px-5 py-3.5 text-sm shadow-xl backdrop-blur-2xl ring-1 ring-white/5">
+    <section class="space-y-4 p-2 sm:p-4 h-screen flex flex-col overflow-hidden">
+      <nav class="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-white/5 bg-zinc-900/40 px-5 py-3.5 text-sm shadow-xl backdrop-blur-2xl ring-1 ring-white/5 shrink-0">
         <div class="flex flex-wrap items-center gap-1.5">
           <!-- Tree toggle: only visible on mobile -->
           <button
@@ -61,30 +59,14 @@ interface BreadcrumbItem {
           >
             <i class="fa-solid fa-folder-tree text-violet-400"></i>
           </button>
-          <div class="flex items-center justify-center size-8 rounded-lg bg-violet-500/10 mr-3">
-            <i class="fa-solid fa-house text-violet-400"></i>
-          </div>
-          @for (crumb of breadcrumbs(); track crumb.path) {
-            <button
-              type="button"
-              class="rounded-xl px-3.5 py-1.5 font-medium transition-all hover:bg-white/10 hover:text-white"
-              [class.bg-violet-500/20]="crumb.path === currentPath()"
-              [class.text-violet-300]="crumb.path === currentPath()"
-              [class.shadow-sm]="crumb.path === currentPath()"
-              [class.text-zinc-400]="crumb.path !== currentPath()"
-              (click)="navigateTo(crumb.path)"
-            >
-              {{ crumb.label }}
-            </button>
-            @if (!$last) {
-              <i class="fa-solid fa-chevron-right text-[10px] text-zinc-600 mx-1"></i>
-            }
-          }
         </div>
         <app-explorer-toolbar
+          class="flex-1"
           (refreshClick)="refresh()"
           (newDirectoryClick)="openCreateDirectoryModal()"
           (uploadFiles)="uploadFiles($event)"
+          (search)="runSearch($event)"
+          (clearSearchEvent)="clearSearch()"
         />
       </nav>
 
@@ -97,11 +79,11 @@ interface BreadcrumbItem {
         ></div>
       }
 
-      <div class="grid gap-3 lg:grid-cols-[320px_1fr]">
+      <div class="flex flex-1 gap-3 min-h-0 relative">
         <!-- Tree panel: fixed drawer on mobile, in-grid on desktop -->
         <div
           class="fixed top-16 bottom-0 left-0 z-50 w-72 transition-transform duration-300 ease-in-out
-                 lg:static lg:z-auto lg:w-auto lg:translate-x-0 lg:top-auto lg:bottom-auto"
+                 lg:static lg:z-auto lg:w-auto lg:translate-x-0 lg:top-auto lg:bottom-auto shrink-0"
           [class.-translate-x-full]="!isMobileTreeOpen()"
         >
           <app-tree-panel
@@ -117,7 +99,7 @@ interface BreadcrumbItem {
           />
         </div>
 
-        <div class="flex flex-col gap-3 h-[calc(100vh-20rem)] min-w-0">
+        <div class="flex-1 min-w-0 h-full">
           <app-file-list
             class="h-full"
             [items]="items()"
@@ -129,17 +111,29 @@ interface BreadcrumbItem {
             [isSearchMode]="searchFilters() !== null"
             [parentPath]="parentPath()"
             (open)="openItem($event)"
-            (selectionChange)="selectedPaths.set($event)"
+            (selectionChange)="onSelectionChange($event)"
             (navigateToParent)="goParentFolder()"
             (moveItems)="handleMoveItems($event)"
             (uploadFiles)="uploadFiles($event)"
             (info)="showItemInfo($event)"
             (contextMenu)="openContextMenu($event)"
-            (search)="runSearch($event)"
-            (clearSearch)="clearSearch()"
             (changePage)="changePage($event)"
           />
         </div>
+
+        @if (selectedItem() && isDetailsPaneOpen() && !isDetailsSuppressedForSelection()) {
+          <div class="hidden xl:block shrink-0 h-full">
+            <app-file-details
+              [item]="selectedItem()"
+              [thumbnailUrl]="thumbnailUrls()[selectedItem()!.path]"
+              (close)="isDetailsPaneOpen.set(false)"
+              (open)="openItem($event)"
+              (download)="downloadSelected()"
+              (rename)="renameSelected()"
+              (delete)="deleteSelected()"
+            />
+          </div>
+        }
       </div>
 
       <app-context-menu
@@ -147,6 +141,7 @@ interface BreadcrumbItem {
         [x]="contextMenuX()"
         [y]="contextMenuY()"
         [selectedCount]="selectedCount()"
+        [canShare]="canShare()"
         (action)="handleContextMenuAction($event)"
         (close)="closeContextMenu()"
       />
@@ -203,6 +198,9 @@ export class ExplorerPage {
   private readonly searchApi = inject(SearchApiService);
   private readonly filesApi = inject(FilesApiService);
   private readonly operationsApi = inject(OperationsApiService);
+  private readonly sharesApi = inject(SharesApiService);
+  private readonly authStore = inject(AuthStoreService);
+  private readonly apiBaseUrl = inject(API_BASE_URL);
   private readonly feedback = inject(ErrorStoreService);
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
@@ -227,6 +225,7 @@ export class ExplorerPage {
   readonly viewerVideoPaths = signal<string[]>([]);
   readonly viewerVideoIndex = signal(-1);
   readonly selectedPaths = signal<string[]>([]);
+  readonly isDetailsPaneOpen = signal(true);
   readonly searching = signal(false);
   readonly activeModal = signal<ActiveModalConfig | null>(null);
   readonly isConflictModalOpen = signal(false);
@@ -240,6 +239,8 @@ export class ExplorerPage {
   readonly totalPages = signal(1);
   readonly totalItems = signal(0);
   readonly searchFilters = signal<SearchFilters | null>(null);
+  readonly sharingPath = signal<string | null>(null);
+  readonly suppressDetailsForPath = signal<string | null>(null);
 
   readonly isContextMenuOpen = signal(false);
   readonly contextMenuX = signal(0);
@@ -247,6 +248,20 @@ export class ExplorerPage {
   readonly isMobileTreeOpen = signal(false);
 
   readonly selectedCount = computed(() => this.selectedPaths().length);
+  readonly selectedItem = computed(() => {
+    const paths = this.selectedPaths();
+    if (paths.length !== 1) return null;
+    return this.items().find(i => i.path === paths[0]) || null;
+  });
+  readonly isDetailsSuppressedForSelection = computed(() => {
+    const item = this.selectedItem();
+    if (!item) return false;
+    return this.suppressDetailsForPath() === item.path;
+  });
+  readonly canShare = computed(() => {
+    const role = this.authStore.user()?.role;
+    return role === 'editor' || role === 'admin';
+  });
   readonly parentPath = computed<string | null>(() => {
     const p = this.currentPath();
     if (p === '/' || !p.trim()) return null;
@@ -270,23 +285,6 @@ export class ExplorerPage {
       this.viewerVideoIndex() >= 0 &&
       this.viewerVideoIndex() < this.viewerVideoPaths().length - 1
   );
-  readonly breadcrumbs = computed<BreadcrumbItem[]>(() => {
-    const path = this.currentPath();
-    const segments = path.split('/').filter((segment) => segment.length > 0);
-
-    const crumbs: BreadcrumbItem[] = [{ label: 'root', path: '/' }];
-    let accumulated = '';
-
-    for (const segment of segments) {
-      accumulated = `${accumulated}/${segment}`;
-      crumbs.push({
-        label: segment,
-        path: accumulated,
-      });
-    }
-
-    return crumbs;
-  });
 
   constructor() {
     this.restoreState();
@@ -404,8 +402,6 @@ export class ExplorerPage {
 
     this.page.set(1);
     this.searchFilters.set(filters);
-    const searchMessage = filters.q ? `Buscando "${filters.q}"` : 'Aplicando filtros de búsqueda';
-    this.feedback.info('SEARCH', searchMessage);
     this.persistState();
     this.loadItems();
   }
@@ -664,6 +660,28 @@ export class ExplorerPage {
     });
   }
 
+  shareSelected(): void {
+    const target = this.selectedPaths()[0];
+    if (!target) {
+      return;
+    }
+
+    this.sharingPath.set(target);
+    this.sharesApi.create({ path: target }).subscribe({
+      next: (share) => {
+        const publicUrl = `${this.apiBaseUrl}${this.sharesApi.getPublicDownloadUrl(share.token)}`;
+        navigator.clipboard.writeText(publicUrl).then(
+          () => this.feedback.success('SHARE', `Enlace copiado al portapapeles para: ${target}`),
+          () => this.feedback.success('SHARE', `Compartido: ${publicUrl}`)
+        );
+        this.sharingPath.set(null);
+      },
+      error: () => {
+        this.sharingPath.set(null);
+      },
+    });
+  }
+
   showItemInfo(path: string): void {
     this.filesApi.info(path).subscribe({
       next: (info) => {
@@ -749,14 +767,20 @@ export class ExplorerPage {
     });
   }
 
+  onSelectionChange(paths: string[]): void {
+    this.selectedPaths.set(paths);
+    this.suppressDetailsForPath.set(null);
+  }
+
   openContextMenu(eventData: { event: MouseEvent; item: FileItem }): void {
     const { event, item } = eventData;
-    
+    this.suppressDetailsForPath.set(item.path);
+
     // If the item is not already selected, select only this item
     if (!this.selectedPaths().includes(item.path)) {
       this.selectedPaths.set([item.path]);
     }
-    
+
     this.contextMenuX.set(event.clientX);
     this.contextMenuY.set(event.clientY);
     this.isContextMenuOpen.set(true);
@@ -796,6 +820,9 @@ export class ExplorerPage {
         break;
       case 'info':
         this.showInfoSelected();
+        break;
+      case 'share':
+        this.shareSelected();
         break;
     }
   }

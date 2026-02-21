@@ -11,18 +11,18 @@ interface TreeRow {
   selector: 'app-tree-panel',
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <section class="flex h-full flex-col overflow-hidden rounded-2xl border border-white/5 bg-zinc-900/60 shadow-2xl backdrop-blur-xl">
-      <header class="flex shrink-0 items-center justify-between px-6 py-5">
+    <section class="flex h-full flex-col overflow-hidden rounded-2xl border border-white/5 bg-zinc-900/40 shadow-xl backdrop-blur-2xl ring-1 ring-white/5">
+      <header class="flex shrink-0 items-center justify-between px-5 py-4 border-b border-white/5 bg-white/5">
         <div class="flex items-center gap-3">
-          <div class="flex size-8 items-center justify-center rounded-lg bg-violet-500/10 text-violet-400 ring-1 ring-inset ring-violet-500/20">
-            <i class="fa-solid fa-folder-tree text-sm"></i>
+          <div class="flex size-7 items-center justify-center rounded-lg bg-violet-500/10 text-violet-400 ring-1 ring-inset ring-violet-500/20">
+            <i class="fa-solid fa-folder-tree text-xs"></i>
           </div>
-          <h2 class="text-base font-semibold tracking-tight text-zinc-100">Explorador</h2>
+          <h2 class="text-sm font-bold tracking-wide text-zinc-100">Explorador</h2>
         </div>
         @if (closeable()) {
           <button
             type="button"
-            class="lg:hidden flex size-8 items-center justify-center rounded-lg text-zinc-400 transition-colors hover:bg-white/5 hover:text-zinc-100"
+            class="lg:hidden flex size-7 items-center justify-center rounded-lg text-zinc-400 transition-colors hover:bg-white/10 hover:text-zinc-100"
             aria-label="Cerrar panel"
             (click)="close.emit()"
           >
@@ -31,23 +31,20 @@ interface TreeRow {
         }
       </header>
 
-      <div class="flex-1 overflow-y-auto px-3 pb-4 custom-scrollbar">
+      <div class="flex-1 overflow-y-auto px-3 py-4 custom-scrollbar">
         <!-- Root entry -->
-        <div class="mb-4">
+        <div class="mb-2">
           <button
             type="button"
-            class="group relative flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm transition-all hover:bg-white/5"
-            [class.bg-violet-500/10]="currentPath() === '/'"
-            [class.text-violet-300]="currentPath() === '/'"
+            class="group relative flex w-full items-center gap-3 rounded-xl px-3 py-2 text-left text-sm transition-all hover:bg-white/5"
+            [class.bg-violet-500/20]="currentPath() === '/'"
+            [class.text-violet-200]="currentPath() === '/'"
             [class.text-zinc-400]="currentPath() !== '/'"
             aria-label="Ir a la raíz"
             (click)="selectPath.emit('/')"
           >
-            @if (currentPath() === '/') {
-              <div class="absolute left-0 h-3/4 w-1 rounded-r-full bg-violet-500"></div>
-            }
             <i class="fa-solid fa-hard-drive shrink-0 transition-colors" [class.text-violet-400]="currentPath() === '/'" [class.text-zinc-500]="currentPath() !== '/'"></i>
-            <span class="truncate font-medium transition-colors group-hover:text-zinc-200">Raíz del sistema</span>
+            <span class="truncate font-medium transition-colors group-hover:text-zinc-200">Root</span>
           </button>
         </div>
 
@@ -63,15 +60,11 @@ interface TreeRow {
             @for (row of visibleRows(); track row.node.path) {
               <li>
                 <div 
-                  class="group relative flex items-center rounded-lg transition-colors hover:bg-white/5" 
-                  [class.bg-violet-500/10]="currentPath() === row.node.path"
+                  class="group relative flex items-center rounded-xl transition-colors hover:bg-white/5" 
+                  [class.bg-violet-500/20]="currentPath() === row.node.path"
                   [style.padding-left.px]="row.level * 16 + 8"
                 >
-                  @if (currentPath() === row.node.path) {
-                    <div class="absolute left-0 h-3/4 w-1 rounded-r-full bg-violet-500"></div>
-                  }
-                  
-                  <div class="flex h-9 w-6 shrink-0 items-center justify-center">
+                  <div class="flex h-8 w-6 shrink-0 items-center justify-center">
                     @if (isDirectory(row.node.type) && canExpand(row.node)) {
                       <button
                         type="button"
@@ -86,8 +79,8 @@ interface TreeRow {
 
                   <button
                     type="button"
-                    class="flex min-w-0 flex-1 items-center gap-2.5 py-2 pr-3 text-left transition-colors"
-                    [class.text-violet-300]="currentPath() === row.node.path"
+                    class="flex min-w-0 flex-1 items-center gap-2.5 py-1.5 pr-3 text-left transition-colors"
+                    [class.text-violet-200]="currentPath() === row.node.path"
                     [class.font-medium]="currentPath() === row.node.path"
                     [class.text-zinc-400]="currentPath() !== row.node.path"
                     (click)="activateNode(row.node)"

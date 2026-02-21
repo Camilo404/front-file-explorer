@@ -5,7 +5,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 import { JobsApiService } from '../../core/api/jobs-api.service';
 import { ErrorStoreService } from '../../core/errors/error-store.service';
-import { JobData, JobItemResult } from '../../core/models/api.models';
+import { JobData, JobItemResult, JobUpdate } from '../../core/models/api.models';
 
 @Component({
   selector: 'app-jobs-page',
@@ -52,12 +52,46 @@ import { JobData, JobItemResult } from '../../core/models/api.models';
       </form>
 
       @if (job()) {
-        <article class="rounded-2xl border border-white/5 bg-zinc-900/40 p-5 shadow-xl backdrop-blur-2xl ring-1 ring-white/5 text-sm">
-          <p><strong>ID:</strong> {{ job()!.job_id }}</p>
-          <p><strong>Status:</strong> {{ job()!.status }}</p>
-          <p><strong>Operation:</strong> {{ job()!.operation }}</p>
-          <p><strong>Progress:</strong> {{ job()!.progress }}%</p>
-          <p><strong>Processed:</strong> {{ job()!.processed_items }}/{{ job()!.total_items }}</p>
+        <article class="rounded-2xl border border-white/5 bg-zinc-900/40 p-5 shadow-xl backdrop-blur-2xl ring-1 ring-white/5 text-sm space-y-3">
+          <div class="grid gap-1">
+            <p><strong>ID:</strong> {{ job()!.job_id }}</p>
+            <p><strong>Status:</strong> {{ job()!.status }}</p>
+            <p><strong>Operation:</strong> {{ job()!.operation }}</p>
+            <p><strong>Progress:</strong> {{ job()!.progress }}%</p>
+            <p><strong>Processed:</strong> {{ job()!.processed_items }}/{{ job()!.total_items }}</p>
+          </div>
+
+          <!-- Progress bar -->
+          <div class="h-2 w-full overflow-hidden rounded-full bg-zinc-800">
+            <div
+              class="h-full rounded-full bg-violet-500 transition-all duration-300"
+              [style.width.%]="job()!.progress"
+            ></div>
+          </div>
+
+          <!-- SSE stream button -->
+          <div class="flex items-center gap-3">
+            <button
+              type="button"
+              class="rounded-xl px-4 py-2 text-sm font-medium transition-all"
+              [class.bg-emerald-600]="!streaming()"
+              [class.hover:bg-emerald-500]="!streaming()"
+              [class.text-white]="!streaming()"
+              [class.bg-red-600]="streaming()"
+              [class.hover:bg-red-500]="streaming()"
+              [class.text-white]="streaming()"
+              (click)="toggleStream()"
+            >
+              <i class="fa-solid mr-1.5 text-xs" [class.fa-satellite-dish]="!streaming()" [class.fa-stop]="streaming()"></i>
+              {{ streaming() ? 'Stop Stream' : 'Live Stream' }}
+            </button>
+            @if (streaming()) {
+              <span class="flex items-center gap-1.5 text-xs text-emerald-400">
+                <span class="inline-block h-2 w-2 animate-pulse rounded-full bg-emerald-400"></span>
+                Streaming live updates...
+              </span>
+            }
+          </div>
         </article>
       }
 
@@ -107,6 +141,7 @@ export class JobsPage {
   private readonly destroyRef = inject(DestroyRef);
   private readonly feedback = inject(ErrorStoreService);
   private pollSub: Subscription | null = null;
+  private streamSub: Subscription | null = null;
 
   readonly job = signal<JobData | null>(null);
   readonly items = signal<JobItemResult[]>([]);
@@ -114,6 +149,7 @@ export class JobsPage {
   readonly itemsLimit = signal(50);
   readonly itemsTotalPages = signal(1);
   readonly itemsTotal = signal(0);
+  readonly streaming = signal(false);
 
   readonly createForm = this.fb.nonNullable.group({
     operation: this.fb.nonNullable.control<'copy' | 'move' | 'delete'>('copy', Validators.required),
@@ -230,5 +266,51 @@ export class JobsPage {
   private stopPolling(): void {
     this.pollSub?.unsubscribe();
     this.pollSub = null;
+  }
+
+  toggleStream(): void {
+    if (this.streaming()) {
+      this.stopStreaming();
+      return;
+    }
+
+    const currentJob = this.job();
+    if (!currentJob) {
+      return;
+    }
+
+    this.stopPolling();
+    this.streaming.set(true);
+
+    this.streamSub = this.jobsApi.streamProgress(currentJob.job_id)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (update: JobUpdate) => {
+          this.job.update((j) =>
+            j
+              ? { ...j, status: update.status, progress: update.progress, processed_items: update.processed_items, total_items: update.total_items }
+              : j
+          );
+
+          if (this.isTerminalJobStatus(update.status)) {
+            this.feedback.info('JOB_STREAM', `Job ${update.job_id} finished: ${update.status}`);
+            this.stopStreaming();
+            this.loadJobItems();
+          }
+        },
+        error: () => {
+          this.stopStreaming();
+        },
+        complete: () => {
+          this.stopStreaming();
+          this.loadJobItems();
+        },
+      });
+  }
+
+  private stopStreaming(): void {
+    this.streamSub?.unsubscribe();
+    this.streamSub = null;
+    this.streaming.set(false);
   }
 }

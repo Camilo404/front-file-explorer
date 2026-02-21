@@ -18,4 +18,16 @@ export class TrashApiService {
       .get<ApiResponse<TrashListData>>('/api/v1/trash', { params })
       .pipe(map((response) => response.data as TrashListData));
   }
+
+  permanentDelete(trashId: string): Observable<boolean> {
+    return this.http
+      .delete<ApiResponse<{ deleted: boolean }>>(`/api/v1/trash/${encodeURIComponent(trashId)}`)
+      .pipe(map((response) => Boolean(response.data?.deleted)));
+  }
+
+  emptyTrash(): Observable<number> {
+    return this.http
+      .delete<ApiResponse<{ deleted_count: number }>>('/api/v1/trash')
+      .pipe(map((response) => response.data?.deleted_count ?? 0));
+  }
 }

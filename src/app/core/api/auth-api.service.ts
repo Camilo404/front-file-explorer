@@ -20,6 +20,11 @@ export interface RegisterRequest {
   role: 'viewer' | 'editor' | 'admin';
 }
 
+export interface ChangePasswordRequest {
+  current_password: string;
+  new_password: string;
+}
+
 @Injectable({ providedIn: 'root' })
 export class AuthApiService {
   private readonly http = inject(HttpClient);
@@ -57,5 +62,11 @@ export class AuthApiService {
     return this.http
       .post<ApiResponse<AuthUser>>(`${this.baseUrl}/register`, payload)
       .pipe(map((response) => response.data as AuthUser));
+  }
+
+  changePassword(payload: ChangePasswordRequest): Observable<boolean> {
+    return this.http
+      .put<ApiResponse<{ changed: boolean }>>(`${this.baseUrl}/change-password`, payload)
+      .pipe(map((response) => Boolean(response.data)));
   }
 }

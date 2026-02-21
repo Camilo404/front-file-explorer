@@ -24,7 +24,7 @@ export class ErrorStoreService {
 
   pushAlert(level: AppAlertLevel, title: string, message: string, details?: string): void {
     const alert: AppAlert = {
-      id: crypto.randomUUID(),
+      id: this.createAlertId(),
       level,
       title,
       message,
@@ -40,5 +40,21 @@ export class ErrorStoreService {
 
   dismiss(alertId: string): void {
     this.alerts.update((current) => current.filter((alert) => alert.id !== alertId));
+  }
+
+  private createAlertId(): string {
+    const cryptoApi = globalThis.crypto;
+
+    if (cryptoApi && typeof cryptoApi.randomUUID === 'function') {
+      return cryptoApi.randomUUID();
+    }
+
+    if (cryptoApi && typeof cryptoApi.getRandomValues === 'function') {
+      const randomBytes = new Uint8Array(16);
+      cryptoApi.getRandomValues(randomBytes);
+      return Array.from(randomBytes, (value) => value.toString(16).padStart(2, '0')).join('');
+    }
+
+    return `alert-${Date.now()}-${Math.random().toString(16).slice(2)}`;
   }
 }

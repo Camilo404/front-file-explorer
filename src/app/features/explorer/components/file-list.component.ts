@@ -1,6 +1,8 @@
 import { ChangeDetectionStrategy, Component, computed, input, output, signal } from '@angular/core';
 
 import { FileItem } from '../../../core/models/api.models';
+import { isDirectory, isImage, isVideo, isMedia, getFileIconClass, getFileIconColorClass } from '../../../shared/utils/file-item.utils';
+import { formatDateTime } from '../../../shared/utils/date.utils';
 
 @Component({
   selector: 'app-file-list',
@@ -243,13 +245,7 @@ import { FileItem } from '../../../core/models/api.models';
                             loading="lazy"
                           />
                         } @else {
-                          @if (isDirectory(item)) {
-                            <i class="fa-solid fa-folder text-violet-400"></i>
-                          } @else if (isVideo(item)) {
-                            <i class="fa-solid fa-file-video text-violet-300"></i>
-                          } @else {
-                            <i class="fa-solid fa-file text-zinc-400"></i>
-                          }
+                          <i class="fa-solid" [class]="getFileIconClass(item) + ' ' + getFileIconColorClass(item)"></i>
                         }
                       </div>
                       <span
@@ -395,13 +391,7 @@ import { FileItem } from '../../../core/models/api.models';
                     />
                   } @else {
                     <div class="flex size-14 items-center justify-center rounded-2xl bg-white/5 shadow-inner transition-transform duration-300 group-hover:scale-110">
-                      @if (isDirectory(item)) {
-                        <i class="fa-solid fa-folder text-3xl text-violet-400"></i>
-                      } @else if (isVideo(item)) {
-                        <i class="fa-solid fa-file-video text-3xl text-violet-300"></i>
-                      } @else {
-                        <i class="fa-solid fa-file text-3xl text-zinc-400"></i>
-                      }
+                      <i class="fa-solid text-3xl" [class]="getFileIconClass(item) + ' ' + getFileIconColorClass(item)"></i>
                     </div>
                   }
                 </div>
@@ -708,33 +698,19 @@ export class FileListComponent {
   }
 
   // -- Helpers --------------------------------------
-  isDirectory(item: FileItem): boolean {
-    const normalizedType = item.type.trim().toLowerCase();
-    return normalizedType === 'dir' || normalizedType === 'directory' || normalizedType === 'folder';
-  }
-
-  isImage(item: FileItem): boolean {
-    if (this.isDirectory(item)) return false;
-    if (item.is_image === true) return true;
-    return item.mime_type?.startsWith('image/') ?? false;
-  }
-
-  isVideo(item: FileItem): boolean {
-    if (this.isDirectory(item)) return false;
-    if (item.is_video === true) return true;
-    return item.mime_type?.startsWith('video/') ?? false;
-  }
-
-  isMedia(item: FileItem): boolean {
-    return this.isImage(item) || this.isVideo(item);
-  }
+  isDirectory = isDirectory;
+  isImage = isImage;
+  isVideo = isVideo;
+  isMedia = isMedia;
+  getFileIconClass = getFileIconClass;
+  getFileIconColorClass = getFileIconColorClass;
 
   thumbnailUrl(path: string): string | undefined {
     return this.thumbnailUrls()[path];
   }
 
   itemMeta(item: FileItem): string {
-    if (this.isDirectory(item)) {
+    if (isDirectory(item)) {
       const count = item.item_count;
       if (typeof count === 'number') {
         return count === 1 ? '1 item' : `${count} items`;
@@ -744,18 +720,7 @@ export class FileListComponent {
     return item.size_human ?? `${item.size}`;
   }
 
-  private readonly dateFormatter = new Intl.DateTimeFormat('es', {
-    day: '2-digit',
-    month: 'short',
-    year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-    hour12: true,
-  });
-
   formatDate(value: string | undefined): string {
-    if (!value) return '-';
-    const date = new Date(value);
-    return isNaN(date.getTime()) ? '-' : this.dateFormatter.format(date);
+    return formatDateTime(value);
   }
 }

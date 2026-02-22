@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
 
 import { TreeNode } from '../../../core/models/api.models';
+import { isDirectoryType } from '../../../shared/utils/file-item.utils';
 
 interface TreeRow {
   node: TreeNode;
@@ -135,8 +136,7 @@ export class TreePanelComponent {
   });
 
   isDirectory(type: string): boolean {
-    const normalized = type.trim().toLowerCase();
-    return normalized === 'dir' || normalized === 'directory' || normalized === 'folder';
+    return isDirectoryType(type);
   }
 
   /** Only show the expand chevron if there are children to show or load. */

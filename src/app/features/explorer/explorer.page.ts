@@ -14,6 +14,7 @@ import { API_BASE_URL } from '../../core/http/api-base-url.token';
 import { UploadTrackerService } from '../../core/uploads/upload-tracker.service';
 import { ChunkedUploadService, CHUNKED_UPLOAD_THRESHOLD } from '../../core/uploads/chunked-upload.service';
 import { FileItem, TreeNode } from '../../core/models/api.models';
+import { isDirectory as isDirectoryUtil, isImage as isImageUtil, isVideo as isVideoUtil } from '../../shared/utils/file-item.utils';
 import { ContextMenuAction, ContextMenuComponent } from './components/context-menu.component';
 import { ExplorerToolbarComponent, SearchFilters } from './components/explorer-toolbar.component';
 import { FileListComponent } from './components/file-list.component';
@@ -994,34 +995,9 @@ export class ExplorerPage {
     this.thumbnailUrls.set(urls);
   }
 
-  private isImageItem(item: FileItem): boolean {
-    if (this.isDirectoryItem(item)) {
-      return false;
-    }
-
-    if (item.is_image === true) {
-      return true;
-    }
-
-    return item.mime_type?.startsWith('image/') ?? false;
-  }
-
-  private isVideoItem(item: FileItem): boolean {
-    if (this.isDirectoryItem(item)) {
-      return false;
-    }
-
-    if (item.is_video === true) {
-      return true;
-    }
-
-    return item.mime_type?.startsWith('video/') ?? false;
-  }
-
-  private isDirectoryItem(item: FileItem): boolean {
-    const normalizedType = item.type.trim().toLowerCase();
-    return normalizedType === 'dir' || normalizedType === 'directory' || normalizedType === 'folder';
-  }
+  private isImageItem = isImageUtil;
+  private isVideoItem = isVideoUtil;
+  private isDirectoryItem = isDirectoryUtil;
 
   private clearThumbnails(): void {
     this.thumbnailUrls.set({});

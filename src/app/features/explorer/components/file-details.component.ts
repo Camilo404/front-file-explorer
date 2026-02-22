@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
 import { DatePipe, DecimalPipe } from '@angular/common';
 import { FileItem } from '../../../core/models/api.models';
+import { isDirectory, getFileIconClass, getFileIconColorClass } from '../../../shared/utils/file-item.utils';
 
 @Component({
   selector: 'app-file-details',
@@ -109,14 +110,6 @@ export class FileDetailsComponent {
   readonly delete = output<FileItem>();
 
   getIconClass(item: FileItem): string {
-    if (item.type === 'dir') return 'fa-folder text-violet-400';
-    if (item.is_image) return 'fa-image text-emerald-400';
-    if (item.is_video) return 'fa-video text-rose-400';
-    if (item.extension === '.pdf') return 'fa-file-pdf text-red-400';
-    if (['.zip', '.rar', '.tar', '.gz'].includes(item.extension || '')) return 'fa-file-zipper text-amber-400';
-    if (['.doc', '.docx'].includes(item.extension || '')) return 'fa-file-word text-blue-400';
-    if (['.xls', '.xlsx'].includes(item.extension || '')) return 'fa-file-excel text-green-400';
-    if (['.txt', '.md', '.csv'].includes(item.extension || '')) return 'fa-file-lines text-zinc-400';
-    return 'fa-file text-zinc-400';
+    return `${getFileIconClass(item)} ${getFileIconColorClass(item)}`;
   }
 }

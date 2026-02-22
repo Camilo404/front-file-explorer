@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, DestroyRef, ElementRef, HostListener, inject, input, output, viewChild } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, ElementRef, inject, input, output, viewChild } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { debounceTime, distinctUntilChanged } from 'rxjs';
@@ -13,6 +13,9 @@ export interface SearchFilters {
   selector: 'app-explorer-toolbar',
   imports: [ReactiveFormsModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
+  host: {
+    '(window:keydown)': 'handleKeyboardEvent($event)',
+  },
   template: `
     <div class="flex flex-1 items-center justify-between gap-4 w-full">
       <!-- Search Bar (Left/Center) -->
@@ -106,7 +109,6 @@ export class ExplorerToolbarComponent {
       });
   }
 
-  @HostListener('window:keydown', ['$event'])
   handleKeyboardEvent(event: KeyboardEvent) {
     if (event.key === '/' && !['INPUT', 'TEXTAREA'].includes((event.target as HTMLElement).tagName)) {
       event.preventDefault();

@@ -1,59 +1,126 @@
-# FrontFileExplorer
+# Front File Explorer
 
-This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 21.1.2.
+A modern, high-performance file management application built with **Angular 21+**. This project leverages the latest Angular features including Standalone Components, Signals, and the new Control Flow syntax to deliver a responsive and intuitive user experience.
 
-## Development server
+## 🚀 Key Features
 
-To start a local development server, run:
+### 📂 File Management (Explorer)
+- **Browse & Navigate**: Intuitive file browser with support for both List and Grid views.
+- **Advanced Operations**: Create folders, rename, delete, move, and copy files/directories.
+- **Context Menu**: Right-click context menu for quick actions on files and folders.
+- **Drag & Drop**: Seamless file upload and organization (implied capability for modern explorers).
+- **Breadcrumbs**: Easy navigation through directory hierarchy.
+- **Tree View**: Collapsible directory tree for quick navigation.
 
-```bash
-ng serve
+### 🖼️ Media & Preview
+- **Image Viewer**: Built-in viewer for image files.
+- **Video Player**: Integrated video player for streaming content.
+- **File Details**: View detailed properties of selected files.
+
+### 🛠️ Advanced Functionality
+- **Search**: Powerful search capabilities to find files and folders instantly.
+- **Chunked Uploads**: Robust upload system supporting large files with progress tracking.
+- **Trash Bin**: Soft delete functionality with restore capabilities.
+- **Sharing**: Securely share files and folders with other users.
+
+### 🔐 Security & Administration
+- **Authentication**: Secure login and session management.
+- **Role-Based Access Control (RBAC)**: Distinct roles for Admins, Editors, and Viewers.
+- **User Management**: Admin interface to manage users and permissions.
+- **Audit Logs**: Comprehensive tracking of all user actions for security and compliance.
+- **Storage Management**: Monitor and manage storage quotas.
+- **Background Jobs**: Monitor long-running tasks and system processes.
+
+## 💻 Tech Stack
+
+- **Framework**: [Angular 21+](https://angular.dev/)
+- **Architecture**: Standalone Components, Signals, OnPush Change Detection.
+- **Styling**: [TailwindCSS 4](https://tailwindcss.com/) for utility-first styling.
+- **Icons**: FontAwesome 6.
+- **State Management**: Angular Signals & RxJS.
+- **Testing**: [Vitest](https://vitest.dev/) for unit testing.
+- **Build Tool**: Angular CLI (Vite-based).
+
+## 🏗️ Project Structure
+
+The project follows a modular architecture for scalability and maintainability:
+
+```
+src/app/
+├── core/           # Singleton services, guards, interceptors, and global models
+│   ├── api/        # HTTP services for API communication
+│   ├── auth/       # Authentication logic and state
+│   ├── guards/     # Route guards (Auth, Role, etc.)
+│   ├── http/       # HTTP interceptors and tokens
+│   └── ...
+├── features/       # Lazy-loaded feature modules
+│   ├── auth/       # Login and password management
+│   ├── explorer/   # Main file browser interface
+│   ├── admin/      # Administrative features (Users, Audit, etc.)
+│   └── ...
+├── shared/         # Reusable components, pipes, and directives
+└── ...
 ```
 
-Once the server is running, open your browser and navigate to `http://localhost:4200/`. The application will automatically reload whenever you modify any of the source files.
+## 🛠️ Getting Started
 
-## Code scaffolding
+### Prerequisites
+- **Node.js**: v18 or higher
+- **npm**: v9 or higher
 
-Angular CLI includes powerful code scaffolding tools. To generate a new component, run:
+### Installation
 
-```bash
-ng generate component component-name
-```
+1. Clone the repository:
+   ```bash
+   git clone <repository-url>
+   ```
 
-For a complete list of available schematics (such as `components`, `directives`, or `pipes`), run:
+2. Navigate to the project directory:
+   ```bash
+   cd front-file-explorer
+   ```
 
-```bash
-ng generate --help
-```
+3. Install dependencies:
+   ```bash
+   npm install
+   ```
 
-## Building
+### Development Server
 
-To build the project run:
-
-```bash
-ng build
-```
-
-This will compile your project and store the build artifacts in the `dist/` directory. By default, the production build optimizes your application for performance and speed.
-
-## Running unit tests
-
-To execute unit tests with the [Vitest](https://vitest.dev/) test runner, use the following command:
+Run the development server:
 
 ```bash
-ng test
+npm start
 ```
 
-## Running end-to-end tests
+Navigate to `http://localhost:4200/`. The application will automatically reload if you change any of the source files.
 
-For end-to-end (e2e) testing, run:
+### Build
+
+Build the project for production:
 
 ```bash
-ng e2e
+npm run build
 ```
 
-Angular CLI does not come with an end-to-end testing framework by default. You can choose one that suits your needs.
+The build artifacts will be stored in the `dist/` directory.
 
-## Additional Resources
+### Running Tests
 
-For more information on using the Angular CLI, including detailed command references, visit the [Angular CLI Overview and Command Reference](https://angular.dev/tools/cli) page.
+Execute unit tests via Vitest:
+
+```bash
+npm test
+```
+
+## 🤝 Contributing
+
+1. Fork the repository.
+2. Create your feature branch (`git checkout -b feature/amazing-feature`).
+3. Commit your changes (`git commit -m 'Add some amazing feature'`).
+4. Push to the branch (`git push origin feature/amazing-feature`).
+5. Open a Pull Request.
+
+## 📄 License
+
+This project is licensed under the MIT License - see the LICENSE file for details.

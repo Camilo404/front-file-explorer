@@ -65,6 +65,7 @@ export class UploadTrackerService {
       return;
     }
 
+    const now = Date.now();
     const ratio = Math.min(loadedBytes / totalBytes, 1);
 
     this.entries.update((current) =>
@@ -74,12 +75,44 @@ export class UploadTrackerService {
         }
 
         const entryLoaded = Math.round(entry.fileSize * ratio);
+        
+        let { startTime, lastUpdated, lastLoaded, speed, remainingTime } = entry;
+
+        // Initialize on first update
+        if (!startTime || entry.status === 'pending') {
+          startTime = now;
+          lastUpdated = now;
+          lastLoaded = entryLoaded;
+          speed = 0;
+          remainingTime = 0;
+        }
+
+        // Calculate speed every 800ms to smooth out fluctuations
+        if (lastUpdated && (now - lastUpdated) > 800) {
+          const timeDiff = now - lastUpdated;
+          const bytesDiff = entryLoaded - (lastLoaded || 0);
+
+          if (timeDiff > 0 && bytesDiff >= 0) {
+            speed = (bytesDiff / timeDiff) * 1000;
+            const remainingBytes = entry.fileSize - entryLoaded;
+            remainingTime = speed > 0 ? remainingBytes / speed : 0;
+          }
+
+          lastUpdated = now;
+          lastLoaded = entryLoaded;
+        }
+
         return {
           ...entry,
           loaded: entryLoaded,
           total: entry.fileSize,
           progress: Math.round(ratio * 100),
           status: 'uploading' as const,
+          startTime,
+          lastUpdated,
+          lastLoaded,
+          speed,
+          remainingTime,
         };
       }),
     );
@@ -94,6 +127,7 @@ export class UploadTrackerService {
       return;
     }
 
+    const now = Date.now();
     const progress = Math.min(Math.round((loaded / total) * 100), 100);
 
     this.entries.update((current) =>
@@ -101,7 +135,45 @@ export class UploadTrackerService {
         if (entry.id !== id) {
           return entry;
         }
-        return { ...entry, loaded, total, progress, status: 'uploading' as const };
+
+        let { startTime, lastUpdated, lastLoaded, speed, remainingTime } = entry;
+
+        // Initialize on first update
+        if (!startTime || entry.status === 'pending') {
+          startTime = now;
+          lastUpdated = now;
+          lastLoaded = loaded;
+          speed = 0;
+          remainingTime = 0;
+        }
+
+        // Calculate speed every 800ms
+        if (lastUpdated && (now - lastUpdated) > 800) {
+          const timeDiff = now - lastUpdated;
+          const bytesDiff = loaded - (lastLoaded || 0);
+
+          if (timeDiff > 0 && bytesDiff >= 0) {
+            speed = (bytesDiff / timeDiff) * 1000;
+            const remainingBytes = total - loaded;
+            remainingTime = speed > 0 ? remainingBytes / speed : 0;
+          }
+
+          lastUpdated = now;
+          lastLoaded = loaded;
+        }
+
+        return {
+          ...entry,
+          loaded,
+          total,
+          progress,
+          status: 'uploading' as const,
+          startTime,
+          lastUpdated,
+          lastLoaded,
+          speed,
+          remainingTime,
+        };
       }),
     );
   }

@@ -8,11 +8,11 @@ import { UploadTrackerService } from '../../core/uploads/upload-tracker.service'
   styles: `
     @keyframes panelSlideUp {
       from {
-        transform: translateY(20px);
+        transform: translateY(20px) scale(0.95);
         opacity: 0;
       }
       to {
-        transform: translateY(0);
+        transform: translateY(0) scale(1);
         opacity: 1;
       }
     }
@@ -20,51 +20,72 @@ import { UploadTrackerService } from '../../core/uploads/upload-tracker.service'
       display: block;
     }
     .panel-enter {
-      animation: panelSlideUp 0.25s ease-out forwards;
+      animation: panelSlideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+    .scrollbar-thin::-webkit-scrollbar {
+      width: 4px;
+    }
+    .scrollbar-thin::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    .scrollbar-thin::-webkit-scrollbar-thumb {
+      background-color: rgba(255, 255, 255, 0.1);
+      border-radius: 9999px;
+    }
+    .scrollbar-thin::-webkit-scrollbar-thumb:hover {
+      background-color: rgba(255, 255, 255, 0.2);
     }
   `,
   template: `
     @if (tracker.hasEntries()) {
       <div
-        class="panel-enter fixed bottom-4 right-4 z-50 w-80 rounded-xl border border-white/10 bg-zinc-900/95 shadow-2xl backdrop-blur-xl"
+        class="panel-enter fixed bottom-6 right-6 z-50 w-96 overflow-hidden rounded-2xl border border-white/10 bg-zinc-900/90 shadow-2xl backdrop-blur-md ring-1 ring-black/50"
         role="status"
         aria-live="polite"
       >
         <!-- Header -->
         <button
           type="button"
-          class="flex w-full items-center justify-between gap-2 px-4 py-3 text-left"
+          class="flex w-full items-center justify-between gap-3 border-b border-white/5 bg-white/5 px-5 py-3.5 text-left transition-colors hover:bg-white/10"
           (click)="collapsed.set(!collapsed())"
           [attr.aria-expanded]="!collapsed()"
           aria-controls="upload-entries"
         >
-          <div class="flex items-center gap-2.5 min-w-0">
+          <div class="flex items-center gap-3 min-w-0">
             @if (tracker.isUploading()) {
-              <i class="fa-solid fa-cloud-arrow-up text-violet-400 animate-pulse"></i>
+              <div class="relative flex items-center justify-center size-5">
+                <i class="fa-solid fa-cloud-arrow-up text-violet-400 absolute animate-pulse"></i>
+              </div>
             } @else {
-              <i class="fa-solid fa-circle-check text-emerald-400"></i>
+              <div class="relative flex items-center justify-center size-5">
+                 <i class="fa-solid fa-circle-check text-emerald-400 text-lg"></i>
+              </div>
             }
-            <span class="text-sm font-medium text-white truncate">
-              {{ headerText() }}
-            </span>
+            <div class="flex flex-col min-w-0">
+              <span class="text-sm font-semibold text-white truncate leading-tight">
+                {{ headerText() }}
+              </span>
+              @if (tracker.isUploading()) {
+                <span class="text-[10px] text-zinc-400 font-medium">
+                  {{ tracker.overallProgress() }}% completado
+                </span>
+              }
+            </div>
           </div>
-          <div class="flex items-center gap-2 shrink-0">
-            @if (tracker.isUploading()) {
-              <span class="text-xs tabular-nums text-zinc-400">{{ tracker.overallProgress() }}%</span>
-            }
+          
+          <div class="flex items-center gap-3 shrink-0">
             <i
-              class="fa-solid text-xs text-zinc-500 transition-transform"
-              [class.fa-chevron-down]="collapsed()"
-              [class.fa-chevron-up]="!collapsed()"
+              class="fa-solid fa-chevron-down text-xs text-zinc-500 transition-transform duration-200"
+              [class.rotate-180]="!collapsed()"
             ></i>
           </div>
         </button>
 
-        <!-- Overall progress bar (always visible) -->
+        <!-- Overall progress bar (always visible if uploading) -->
         @if (tracker.isUploading()) {
-          <div class="mx-4 mb-2 h-1 overflow-hidden rounded-full bg-zinc-800">
+          <div class="h-1 w-full bg-zinc-800/50">
             <div
-              class="h-full rounded-full bg-linear-to-r from-violet-500 to-fuchsia-500 transition-all duration-300 ease-out"
+              class="h-full bg-linear-to-r from-violet-500 via-fuchsia-500 to-violet-500 bg-size-[200%_100%] animate-gradient-x transition-all duration-300 ease-out"
               [style.width.%]="tracker.overallProgress()"
             ></div>
           </div>
@@ -74,12 +95,12 @@ import { UploadTrackerService } from '../../core/uploads/upload-tracker.service'
         @if (!collapsed()) {
           <div
             id="upload-entries"
-            class="max-h-64 overflow-y-auto border-t border-white/5 px-2 py-2 scrollbar-thin"
+            class="max-h-80 overflow-y-auto px-1 py-2 scrollbar-thin"
           >
             @for (entry of tracker.entries(); track entry.id) {
-              <div class="flex items-center gap-2.5 rounded-lg px-2 py-1.5 hover:bg-white/5 transition-colors">
+              <div class="group relative flex items-start gap-3 rounded-xl p-3 transition-colors hover:bg-white/5">
                 <!-- Status icon -->
-                <div class="shrink-0 flex items-center justify-center w-5">
+                <div class="mt-0.5 shrink-0 flex items-center justify-center size-8 rounded-full bg-white/5 ring-1 ring-white/5">
                   @switch (entry.status) {
                     @case ('pending') {
                       <i class="fa-solid fa-clock text-xs text-zinc-500"></i>
@@ -97,32 +118,43 @@ import { UploadTrackerService } from '../../core/uploads/upload-tracker.service'
                 </div>
 
                 <!-- File info + progress -->
-                <div class="flex-1 min-w-0">
-                  <div class="flex items-baseline justify-between gap-2">
-                    <span
-                      class="text-xs truncate"
-                      [class.text-zinc-300]="entry.status !== 'error'"
-                      [class.text-red-300]="entry.status === 'error'"
-                      [title]="entry.fileName"
-                    >
-                      {{ entry.fileName }}
-                    </span>
-                    <span class="text-[10px] tabular-nums text-zinc-500 shrink-0">
-                      {{ formatSize(entry.fileSize) }}
-                    </span>
+                <div class="flex-1 min-w-0 space-y-2">
+                  <div class="flex items-start justify-between gap-4">
+                    <div class="flex flex-col min-w-0">
+                      <span
+                        class="text-sm font-medium truncate leading-tight"
+                        [class.text-zinc-200]="entry.status !== 'error'"
+                        [class.text-red-300]="entry.status === 'error'"
+                        [title]="entry.fileName"
+                      >
+                        {{ entry.fileName }}
+                      </span>
+                      <span class="text-[10px] text-zinc-500 font-medium tabular-nums">
+                        {{ formatSize(entry.fileSize) }}
+                      </span>
+                    </div>
                   </div>
 
                   @if (entry.status === 'uploading' || entry.status === 'pending') {
-                    <div class="mt-1 h-0.5 overflow-hidden rounded-full bg-zinc-800">
-                      <div
-                        class="h-full rounded-full bg-violet-500 transition-all duration-300 ease-out"
-                        [style.width.%]="entry.progress"
-                      ></div>
+                    <div class="space-y-1.5">
+                      <div class="h-1.5 w-full overflow-hidden rounded-full bg-zinc-800 ring-1 ring-white/5">
+                        <div
+                          class="h-full rounded-full bg-violet-500 transition-all duration-300 ease-out"
+                          [style.width.%]="entry.progress"
+                        ></div>
+                      </div>
+
+                      @if (entry.status === 'uploading' && entry.speed) {
+                        <div class="flex items-center justify-between text-[10px] font-medium text-zinc-500 tabular-nums">
+                          <span class="text-zinc-400">{{ formatSpeed(entry.speed) }}</span>
+                          <span>{{ formatTime(entry.remainingTime) }} restantes</span>
+                        </div>
+                      }
                     </div>
                   }
 
                   @if (entry.status === 'error' && entry.errorReason) {
-                    <p class="mt-0.5 text-[10px] text-red-400 truncate" [title]="entry.errorReason">
+                    <p class="text-[10px] font-medium text-red-400 bg-red-400/10 px-2 py-1 rounded-md truncate border border-red-400/20" [title]="entry.errorReason">
                       {{ entry.errorReason }}
                     </p>
                   }
@@ -133,10 +165,10 @@ import { UploadTrackerService } from '../../core/uploads/upload-tracker.service'
 
           <!-- Footer actions -->
           @if (!tracker.isUploading()) {
-            <div class="border-t border-white/5 px-4 py-2 flex justify-end">
+            <div class="border-t border-white/5 bg-white/5 p-3 flex justify-end">
               <button
                 type="button"
-                class="rounded-lg px-3 py-1 text-xs text-zinc-400 transition-colors hover:bg-white/10 hover:text-white"
+                class="rounded-lg bg-white/5 px-4 py-1.5 text-xs font-medium text-zinc-300 ring-1 ring-white/10 transition-all hover:bg-white/10 hover:text-white hover:ring-white/20 active:scale-95"
                 (click)="tracker.clearAll()"
               >
                 Cerrar
@@ -179,5 +211,24 @@ export class UploadProgressPanelComponent {
       return `${(bytes / 1048576).toFixed(1)} MB`;
     }
     return `${(bytes / 1073741824).toFixed(1)} GB`;
+  }
+
+  protected formatSpeed(bytesPerSec?: number): string {
+    if (!bytesPerSec || bytesPerSec === 0) return '';
+    return `${this.formatSize(bytesPerSec)}/s`;
+  }
+
+  protected formatTime(seconds?: number): string {
+    if (seconds === undefined || seconds === null || !isFinite(seconds) || seconds === 0) return '';
+    if (seconds < 60) return `${Math.round(seconds)}s`;
+
+    const hours = Math.floor(seconds / 3600);
+    const mins = Math.floor((seconds % 3600) / 60);
+    const secs = Math.round(seconds % 60);
+
+    if (hours > 0) {
+      return `${hours}h ${mins}m`;
+    }
+    return `${mins}m ${secs}s`;
   }
 }

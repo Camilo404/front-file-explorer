@@ -10,6 +10,16 @@ export interface UploadEntry {
   progress: number;
   status: UploadEntryStatus;
   errorReason?: string;
+  /** Upload speed in bytes per second. */
+  speed?: number;
+  /** Estimated time remaining in seconds. */
+  remainingTime?: number;
+  /** Timestamp when the upload started. */
+  startTime?: number;
+  /** Last timestamp when progress was updated. */
+  lastUpdated?: number;
+  /** Bytes loaded at last update. */
+  lastLoaded?: number;
 }
 
 // ── Chunked upload models ────────────────────────────────────────

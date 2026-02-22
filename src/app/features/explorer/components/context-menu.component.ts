@@ -1,7 +1,12 @@
 import { DOCUMENT } from '@angular/common';
-import { ChangeDetectionStrategy, Component, computed, inject, input, output } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, input, output, signal } from '@angular/core';
 
-export type ContextMenuAction = 'rename' | 'move' | 'copy' | 'delete' | 'download' | 'info' | 'share';
+export type ContextMenuActionType = 'rename' | 'move' | 'copy' | 'delete' | 'download' | 'info' | 'share';
+
+export interface ContextMenuEvent {
+  type: ContextMenuActionType;
+  payload?: any;
+}
 
 @Component({
   selector: 'app-context-menu',
@@ -79,15 +84,22 @@ export type ContextMenuAction = 'rename' | 'move' | 'copy' | 'delete' | 'downloa
         </button>
 
         @if (canShare()) {
-          <button
-            type="button"
-            class="flex w-full items-center gap-2.5 rounded-lg px-2 py-1.5 text-left transition-colors hover:bg-white/10 hover:text-white disabled:opacity-50 disabled:hover:bg-transparent disabled:hover:text-zinc-200"
-            [disabled]="selectedCount() !== 1"
-            (click)="onAction('share')"
-          >
+          <div class="relative flex w-full items-center gap-2.5 rounded-lg px-2 py-1.5 transition-colors hover:bg-white/10 hover:text-white disabled:opacity-50 disabled:hover:bg-transparent disabled:hover:text-zinc-200">
             <i class="fa-solid fa-share-nodes fa-fw text-zinc-400"></i>
-            Compartir
-          </button>
+            <select
+              class="w-full appearance-none bg-transparent text-left text-sm text-zinc-200 focus:outline-none cursor-pointer"
+              [disabled]="selectedCount() !== 1"
+              (change)="onShareChange($event)"
+              (click)="$event.stopPropagation()"
+            >
+              <option value="" disabled selected class="bg-zinc-900 text-zinc-500">Compartir...</option>
+              <option value="24h" class="bg-zinc-900">24 Horas (Default)</option>
+              @for (opt of durationOptions(); track opt.value) {
+                <option [value]="opt.value" class="bg-zinc-900">{{ opt.label }}</option>
+              }
+            </select>
+            <i class="fa-solid fa-chevron-right absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-zinc-500 pointer-events-none"></i>
+          </div>
         }
 
         <button
@@ -124,8 +136,14 @@ export class ContextMenuComponent {
   readonly selectedCount = input(0);
   readonly canShare = input(false);
 
-  readonly action = output<ContextMenuAction>();
+  readonly action = output<ContextMenuEvent>();
   readonly close = output<void>();
+
+  readonly durationOptions = signal([
+    { label: '1 Hora', value: '1h' },
+    { label: '7 Días', value: '168h' },
+    { label: '30 Días', value: '720h' },
+  ]);
 
   /** True when the viewport is narrower than the sm breakpoint (640 px). */
   readonly isMobile = computed(() => {
@@ -148,9 +166,19 @@ export class ContextMenuComponent {
     return Math.max(8, Math.min(this.y(), vh - menuH - 8));
   });
 
-  onAction(actionType: ContextMenuAction): void {
-    this.action.emit(actionType);
+  onAction(type: ContextMenuActionType, payload?: any): void {
+    this.action.emit({ type, payload });
     this.close.emit();
+  }
+
+  onShareChange(event: Event): void {
+    const select = event.target as HTMLSelectElement;
+    const value = select.value;
+    if (value) {
+      this.onAction('share', value);
+      // Reset value so it can be selected again if needed (though menu closes)
+      select.value = '';
+    }
   }
 }
 

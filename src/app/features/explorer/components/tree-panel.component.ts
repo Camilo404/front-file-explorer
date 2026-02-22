@@ -66,7 +66,9 @@ interface TreeRow {
                   [style.padding-left.px]="row.level * 16 + 8"
                 >
                   <div class="flex h-8 w-6 shrink-0 items-center justify-center">
-                    @if (isDirectory(row.node.type) && canExpand(row.node)) {
+                    @if (isLoading(row.node.path)) {
+                      <i class="fa-solid fa-spinner animate-spin text-xs text-zinc-500"></i>
+                    } @else if (isDirectory(row.node.type) && canExpand(row.node)) {
                       <button
                         type="button"
                         class="flex size-5 items-center justify-center rounded text-zinc-500 transition-colors hover:bg-white/10 hover:text-zinc-300"
@@ -113,6 +115,7 @@ export class TreePanelComponent {
   readonly currentPath = input('/');
   readonly expandedPaths = input<string[]>([]);
   readonly closeable = input<boolean>(false);
+  readonly loadingPaths = input<string[]>([]);
   readonly selectPath = output<string>();
   readonly loadChildren = output<string>();
   readonly expandedPathsChange = output<string[]>();
@@ -146,6 +149,10 @@ export class TreePanelComponent {
 
   isExpanded(path: string): boolean {
     return this.expandedPaths().includes(path);
+  }
+
+  isLoading(path: string): boolean {
+    return this.loadingPaths().includes(path);
   }
 
   /**

@@ -54,36 +54,6 @@ import { formatDateTime } from '../../../shared/utils/date.utils';
           </div>
 
           <div class="flex items-center gap-3">
-            <!-- View Toggle -->
-            <div class="flex items-center rounded-lg bg-zinc-900/50 p-1 ring-1 ring-white/10">
-              <button
-                type="button"
-                class="flex size-7 items-center justify-center rounded transition-all"
-                [class.bg-white/10]="viewMode() === 'list'"
-                [class.text-white]="viewMode() === 'list'"
-                [class.text-zinc-500]="viewMode() !== 'list'"
-                [class.hover:text-zinc-300]="viewMode() !== 'list'"
-                (click)="viewMode.set('list')"
-                aria-label="Vista de lista"
-                title="Vista de lista"
-              >
-                <i class="fa-solid fa-list text-xs"></i>
-              </button>
-              <button
-                type="button"
-                class="flex size-7 items-center justify-center rounded transition-all"
-                [class.bg-white/10]="viewMode() === 'grid'"
-                [class.text-white]="viewMode() === 'grid'"
-                [class.text-zinc-500]="viewMode() !== 'grid'"
-                [class.hover:text-zinc-300]="viewMode() !== 'grid'"
-                (click)="viewMode.set('grid')"
-                aria-label="Vista de cuadrícula"
-                title="Vista de cuadrícula"
-              >
-                <i class="fa-solid fa-border-all text-xs"></i>
-              </button>
-            </div>
-
             <span class="hidden text-xs font-medium text-zinc-400 sm:inline">
               Página {{ page() }} de {{ totalPages() }}
             </span>
@@ -290,11 +260,11 @@ import { formatDateTime } from '../../../shared/utils/date.utils';
           </table>
         } @else {
           <!-- Grid View -->
-          <div class="grid grid-cols-[repeat(auto-fill,minmax(140px,1fr))] gap-4 p-4">
+          <div class="grid grid-cols-[repeat(auto-fill,minmax(110px,1fr))] sm:grid-cols-[repeat(auto-fill,minmax(140px,1fr))] gap-3 sm:gap-4 p-3 sm:p-4">
             <!-- Parent (..) card always first, only outside search mode -->
             @if (showParentRow()) {
               <div
-                class="group flex aspect-square cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border border-white/5 bg-white/5 p-4 transition-all hover:bg-white/10 hover:shadow-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-violet-500"
+                class="group flex aspect-4/5 cursor-pointer flex-col items-center justify-center gap-3 rounded-xl border border-white/5 bg-white/5 p-4 transition-all hover:bg-white/10 hover:shadow-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-violet-500"
                 [class.ring-2]="dragOverParent()"
                 [class.ring-inset]="dragOverParent()"
                 [class.ring-violet-400]="dragOverParent()"
@@ -307,8 +277,8 @@ import { formatDateTime } from '../../../shared/utils/date.utils';
                 (dragleave)="onDragLeaveParent()"
                 (drop)="onDropOnParent($event)"
               >
-                <div class="flex size-12 items-center justify-center rounded-2xl bg-white/5 shadow-inner">
-                  <i class="fa-solid fa-folder-open text-2xl text-zinc-400"></i>
+                <div class="flex size-12 sm:size-14 items-center justify-center rounded-2xl bg-white/5 shadow-inner">
+                  <i class="fa-solid fa-folder-open text-2xl sm:text-3xl text-zinc-400"></i>
                 </div>
                 <span class="text-sm font-medium text-zinc-400 transition-colors group-hover:text-zinc-200">..</span>
               </div>
@@ -329,7 +299,7 @@ import { formatDateTime } from '../../../shared/utils/date.utils';
 
             @for (item of items(); track item.path; let idx = $index) {
               <div
-                class="group relative flex aspect-square cursor-pointer flex-col overflow-hidden rounded-xl border border-white/5 bg-white/5 transition-all hover:bg-white/10 hover:shadow-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-violet-500"
+                class="group relative flex aspect-4/5 cursor-pointer flex-col overflow-hidden rounded-xl border border-white/5 bg-white/5 transition-all hover:bg-white/10 hover:shadow-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-violet-500"
                 [class.ring-2]="isSelected(item.path)"
                 [class.ring-inset]="isSelected(item.path)"
                 [class.ring-violet-500]="isSelected(item.path)"
@@ -390,23 +360,23 @@ import { formatDateTime } from '../../../shared/utils/date.utils';
                       loading="lazy"
                     />
                   } @else {
-                    <div class="flex size-14 items-center justify-center rounded-2xl bg-white/5 shadow-inner transition-transform duration-300 group-hover:scale-110">
-                      <i class="fa-solid text-3xl" [class]="getFileIconClass(item) + ' ' + getFileIconColorClass(item)"></i>
+                    <div class="flex size-12 sm:size-14 items-center justify-center rounded-2xl bg-white/5 shadow-inner transition-transform duration-300 group-hover:scale-110">
+                      <i class="fa-solid text-2xl sm:text-3xl" [class]="getFileIconClass(item) + ' ' + getFileIconColorClass(item)"></i>
                     </div>
                   }
                 </div>
 
                 <!-- Info Area -->
-                <div class="flex w-full flex-col gap-0.5 border-t border-white/5 bg-white/5 p-2.5">
+                <div class="flex w-full flex-col gap-0.5 border-t border-white/5 bg-white/5 p-3">
                   <span
-                    class="truncate text-xs font-medium transition-colors"
+                    class="truncate text-sm font-medium transition-colors"
                     [class.text-violet-400]="isSelected(item.path)"
                     [class.text-zinc-200]="!isSelected(item.path)"
                     [title]="item.name"
                   >
                     {{ item.name }}
                   </span>
-                  <div class="flex items-center justify-between text-[10px] text-zinc-500">
+                  <div class="flex items-center justify-between text-xs text-zinc-500">
                     <span>{{ itemMeta(item) }}</span>
                   </div>
                 </div>
@@ -464,7 +434,7 @@ export class FileListComponent {
   readonly moveItems = output<{ sources: string[]; destination: string }>();
   readonly uploadFiles = output<FileList>();
 
-  readonly viewMode = signal<'list' | 'grid'>('list');
+  readonly viewMode = input<'list' | 'grid'>('list');
   private readonly anchorPath = signal<string | null>(null);
 
   // -- External drop state ---------------------------------------------------

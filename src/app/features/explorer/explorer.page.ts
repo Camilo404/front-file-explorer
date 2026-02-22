@@ -15,7 +15,7 @@ import { UploadTrackerService } from '../../core/uploads/upload-tracker.service'
 import { ChunkedUploadService, CHUNKED_UPLOAD_THRESHOLD } from '../../core/uploads/chunked-upload.service';
 import { FileItem, TreeNode } from '../../core/models/api.models';
 import { isDirectory as isDirectoryUtil, isImage as isImageUtil, isVideo as isVideoUtil } from '../../shared/utils/file-item.utils';
-import { ContextMenuAction, ContextMenuComponent } from './components/context-menu.component';
+import { ContextMenuActionType, ContextMenuComponent, ContextMenuEvent } from './components/context-menu.component';
 import { ExplorerToolbarComponent, SearchFilters } from './components/explorer-toolbar.component';
 import { FileListComponent } from './components/file-list.component';
 import { ImageViewerComponent } from './components/image-viewer.component';
@@ -32,6 +32,7 @@ interface ExplorerUiState {
   searchFilters: SearchFilters | null;
   pathHistory: string[];
   expandedTreePaths: string[];
+  viewMode: 'list' | 'grid';
 }
 
 interface ActiveModalConfig {
@@ -53,7 +54,7 @@ interface ActiveModalConfig {
   template: `
     <section class="space-y-4 p-2 sm:p-4 h-screen flex flex-col overflow-hidden">
       <nav class="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-white/5 bg-zinc-900/40 px-5 py-3.5 text-sm shadow-xl backdrop-blur-2xl ring-1 ring-white/5 shrink-0">
-        <div class="flex flex-wrap items-center gap-1.5">
+        <div class="flex flex-wrap items-center gap-1.5 w-full">
           <!-- Tree toggle: only visible on mobile -->
           <button
             type="button"
@@ -63,15 +64,21 @@ interface ActiveModalConfig {
           >
             <i class="fa-solid fa-folder-tree text-violet-400"></i>
           </button>
+          
+          <app-explorer-toolbar
+            class="flex-1 w-full"
+            [viewMode]="viewMode()"
+            [currentPath]="currentPath()"
+            [searchDisabled]="searching()"
+            (refreshClick)="refresh()"
+            (newDirectoryClick)="openCreateDirectoryModal()"
+            (uploadFiles)="uploadFiles($event)"
+            (search)="runSearch($event)"
+            (clearSearchEvent)="clearSearch()"
+            (viewModeChange)="viewMode.set($event); persistState()"
+            (breadcrumbClick)="navigateTo($event)"
+          />
         </div>
-        <app-explorer-toolbar
-          class="flex-1"
-          (refreshClick)="refresh()"
-          (newDirectoryClick)="openCreateDirectoryModal()"
-          (uploadFiles)="uploadFiles($event)"
-          (search)="runSearch($event)"
-          (clearSearchEvent)="clearSearch()"
-        />
       </nav>
 
       <!-- Mobile tree backdrop -->
@@ -96,6 +103,7 @@ interface ActiveModalConfig {
             [nodes]="treeNodes()"
             [currentPath]="currentPath()"
             [expandedPaths]="expandedTreePaths()"
+            [loadingPaths]="loadingTreePaths()"
             (selectPath)="navigateTo($event); isMobileTreeOpen.set(false)"
             (loadChildren)="loadTreeChildren($event)"
             (expandedPathsChange)="onExpandedPathsChange($event)"
@@ -107,6 +115,7 @@ interface ActiveModalConfig {
           <app-file-list
             class="h-full"
             [items]="items()"
+            [viewMode]="viewMode()"
             [selectedPaths]="selectedPaths()"
             [thumbnailUrls]="thumbnailUrls()"
             [page]="page()"
@@ -245,6 +254,7 @@ export class ExplorerPage {
   readonly totalPages = signal(1);
   readonly totalItems = signal(0);
   readonly searchFilters = signal<SearchFilters | null>(null);
+  readonly viewMode = signal<'list' | 'grid'>('list');
   readonly sharingPath = signal<string | null>(null);
   readonly suppressDetailsForPath = signal<string | null>(null);
 
@@ -252,6 +262,7 @@ export class ExplorerPage {
   readonly contextMenuX = signal(0);
   readonly contextMenuY = signal(0);
   readonly isMobileTreeOpen = signal(false);
+  readonly loadingTreePaths = signal<string[]>([]);
 
   readonly selectedCount = computed(() => this.selectedPaths().length);
   readonly selectedItem = computed(() => {
@@ -336,12 +347,16 @@ export class ExplorerPage {
   }
 
   loadTreeChildren(path: string): void {
+    this.loadingTreePaths.update((s) => [...s, path]);
     this.explorerApi.tree({ path, depth: 1, include_files: false, limit: 200 }).subscribe({
       next: (result) => {
         const merged = this.attachChildren(this.treeNodes(), path, result.data.nodes);
         this.treeNodes.set(merged);
+        this.loadingTreePaths.update((s) => s.filter((p) => p !== path));
       },
-      error: () => {},
+      error: () => {
+        this.loadingTreePaths.update((s) => s.filter((p) => p !== path));
+      },
     });
   }
 
@@ -732,14 +747,19 @@ export class ExplorerPage {
     });
   }
 
-  shareSelected(): void {
+  shareSelected(duration?: string): void {
     const target = this.selectedPaths()[0];
     if (!target) {
       return;
     }
 
     this.sharingPath.set(target);
-    this.sharesApi.create({ path: target }).subscribe({
+    const payload = {
+      path: target,
+      ...(duration ? { expires_in: duration } : {}),
+    };
+
+    this.sharesApi.create(payload).subscribe({
       next: (share) => {
         const publicUrl = `${this.apiBaseUrl}${this.sharesApi.getPublicDownloadUrl(share.token)}`;
         navigator.clipboard.writeText(publicUrl).then(
@@ -873,8 +893,8 @@ export class ExplorerPage {
     this.activeModal.set(null);
   }
 
-  handleContextMenuAction(action: ContextMenuAction): void {
-    switch (action) {
+  handleContextMenuAction(event: ContextMenuEvent): void {
+    switch (event.type) {
       case 'rename':
         this.renameSelected();
         break;
@@ -894,7 +914,7 @@ export class ExplorerPage {
         this.showInfoSelected();
         break;
       case 'share':
-        this.shareSelected();
+        this.shareSelected(event.payload);
         break;
     }
   }
@@ -1242,7 +1262,7 @@ export class ExplorerPage {
     this.activeModal.set(config);
   }
 
-  private persistState(): void {
+  persistState(): void {
     const state: ExplorerUiState = {
       currentPath: this.currentPath(),
       page: this.page(),
@@ -1250,6 +1270,7 @@ export class ExplorerPage {
       searchFilters: this.searchFilters(),
       pathHistory: this.pathHistory(),
       expandedTreePaths: this.expandedTreePaths(),
+      viewMode: this.viewMode(),
     };
 
     sessionStorage.setItem(this.storageKey, JSON.stringify(state));
@@ -1269,6 +1290,7 @@ export class ExplorerPage {
       this.searchFilters.set(state.searchFilters ?? null);
       this.pathHistory.set(Array.isArray(state.pathHistory) ? state.pathHistory : []);
       this.expandedTreePaths.set(Array.isArray(state.expandedTreePaths) ? state.expandedTreePaths : []);
+      this.viewMode.set(state.viewMode || 'list');
     } catch {
       sessionStorage.removeItem(this.storageKey);
     }

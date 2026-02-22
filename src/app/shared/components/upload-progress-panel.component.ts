@@ -22,19 +22,6 @@ import { UploadTrackerService } from '../../core/uploads/upload-tracker.service'
     .panel-enter {
       animation: panelSlideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
     }
-    .scrollbar-thin::-webkit-scrollbar {
-      width: 4px;
-    }
-    .scrollbar-thin::-webkit-scrollbar-track {
-      background: transparent;
-    }
-    .scrollbar-thin::-webkit-scrollbar-thumb {
-      background-color: rgba(255, 255, 255, 0.1);
-      border-radius: 9999px;
-    }
-    .scrollbar-thin::-webkit-scrollbar-thumb:hover {
-      background-color: rgba(255, 255, 255, 0.2);
-    }
   `,
   template: `
     @if (tracker.hasEntries()) {

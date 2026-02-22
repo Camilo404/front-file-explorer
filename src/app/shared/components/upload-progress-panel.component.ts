@@ -1,7 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 
 import { UploadTrackerService } from '../../core/uploads/upload-tracker.service';
-import { UploadEntry } from '../../core/uploads/upload.models';
 
 @Component({
   selector: 'app-upload-progress-panel',
@@ -65,7 +64,7 @@ import { UploadEntry } from '../../core/uploads/upload.models';
         @if (tracker.isUploading()) {
           <div class="mx-4 mb-2 h-1 overflow-hidden rounded-full bg-zinc-800">
             <div
-              class="h-full rounded-full bg-gradient-to-r from-violet-500 to-fuchsia-500 transition-all duration-300 ease-out"
+              class="h-full rounded-full bg-linear-to-r from-violet-500 to-fuchsia-500 transition-all duration-300 ease-out"
               [style.width.%]="tracker.overallProgress()"
             ></div>
           </div>

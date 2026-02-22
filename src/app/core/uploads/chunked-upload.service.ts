@@ -1,8 +1,9 @@
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpEventType } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import {
   catchError,
   EMPTY,
+  filter,
   lastValueFrom,
   map,
   retry,
@@ -48,6 +49,9 @@ export class ChunkedUploadService {
     conflictPolicy?: string,
   ): Promise<UploadItem> {
     // 1. Init
+    // Mark as uploading immediately (0%) so user sees feedback while init request is flying
+    this.tracker.updateSingleProgress(trackerId, 0, file.size);
+
     const initReq: ChunkedUploadInitRequest = {
       file_name: file.name,
       file_size: file.size,
@@ -72,7 +76,7 @@ export class ChunkedUploadService {
         const blob = file.slice(start, end);
 
         await lastValueFrom(
-          this.sendChunk(upload_id, i, blob).pipe(
+          this.sendChunk(upload_id, i, blob, trackerId, start, file.size).pipe(
             retry({
               count: MAX_RETRIES,
               delay: (error, retryCount) => timer(Math.pow(2, retryCount) * 1000),
@@ -80,7 +84,7 @@ export class ChunkedUploadService {
           ),
         );
 
-        // Update progress after each successful chunk.
+        // Ensure we hit exactly the boundary after chunk completion (just in case progress events missed the last byte)
         const loaded = Math.min(end, file.size);
         this.tracker.updateSingleProgress(trackerId, loaded, file.size);
       }
@@ -103,13 +107,40 @@ export class ChunkedUploadService {
     }
   }
 
-  private sendChunk(uploadId: string, chunkIndex: number, blob: Blob) {
+  private sendChunk(
+    uploadId: string,
+    chunkIndex: number,
+    blob: Blob,
+    trackerId: string,
+    baseOffset: number,
+    totalSize: number,
+  ) {
     return this.http
       .put<ApiResponse<ChunkedUploadChunkResponse>>(
         `/api/v1/uploads/${uploadId}/chunks/${chunkIndex}`,
         blob,
-        { headers: { 'Content-Type': 'application/octet-stream' } },
+        {
+          headers: { 'Content-Type': 'application/octet-stream' },
+          reportProgress: true,
+          observe: 'events',
+        },
       )
-      .pipe(map((r) => r.data as ChunkedUploadChunkResponse));
+      .pipe(
+        map((event) => {
+          if (event.type === HttpEventType.UploadProgress && event.loaded) {
+            const currentChunkLoaded = event.loaded;
+            const totalLoaded = baseOffset + currentChunkLoaded;
+            // Report progress in real-time
+            this.tracker.updateSingleProgress(trackerId, totalLoaded, totalSize);
+          }
+
+          if (event.type === HttpEventType.Response) {
+            return event.body?.data as ChunkedUploadChunkResponse;
+          }
+
+          return null;
+        }),
+        filter((res): res is ChunkedUploadChunkResponse => res !== null),
+      );
   }
 }

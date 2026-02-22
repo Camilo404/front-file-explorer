@@ -521,21 +521,7 @@ export class ExplorerPage {
           this.firstRoundUploadedCount = response.uploaded.length;
           this.conflictingFileNames.set(conflictNames);
           this.isConflictModalOpen.set(true);
-
-          if (otherFailures.length > 0) {
-            this.feedback.warning(
-              'UPLOAD',
-              `${response.uploaded.length} subidos. ${otherFailures.length} fallaron por otros motivos.`
-            );
-          }
         } else {
-          const totalFailed = response.failed.length;
-          this.feedback.success(
-            'UPLOAD',
-            `Upload completado: ${response.uploaded.length} exitosos${
-              totalFailed > 0 ? `, ${totalFailed} fallidos` : ''
-            }.`
-          );
           this.refresh();
         }
       },
@@ -546,37 +532,41 @@ export class ExplorerPage {
   }
 
   /**
-   * Chunked upload for large files. Files are uploaded sequentially
-   * to avoid saturating the HDD with parallel writes.
+   * Chunked upload for large files.
+   * Uploads are processed with limited concurrency to avoid overwhelming the network/server.
    */
   private async uploadLargeFiles(files: File[]): Promise<void> {
     const entryIds = this.uploadTracker.startBatch(files);
-    let successCount = 0;
-    let failCount = 0;
+    const CONCURRENCY_LIMIT = 3;
 
-    for (let i = 0; i < files.length; i++) {
-      try {
-        await this.chunkedUpload.uploadFile(
-          files[i],
-          this.currentPath(),
-          entryIds[i],
-          'skip',
-        );
-        this.uploadTracker.markDone(entryIds[i]);
-        successCount++;
-      } catch {
-        this.uploadTracker.markError(entryIds[i], 'Error en subida por fragmentos');
-        failCount++;
+    // Create a queue of tasks
+    const queue = files.map((file, index) => ({ file, id: entryIds[index] }));
+
+    // Worker function to process the queue
+    const worker = async () => {
+      while (queue.length > 0) {
+        const task = queue.shift();
+        if (!task) break;
+
+        try {
+          await this.chunkedUpload.uploadFile(
+            task.file,
+            this.currentPath(),
+            task.id,
+            'skip',
+          );
+          this.uploadTracker.markDone(task.id);
+        } catch {
+          this.uploadTracker.markError(task.id, 'Error en subida por fragmentos');
+        }
       }
-    }
+    };
 
-    if (successCount > 0 || failCount > 0) {
-      this.feedback.success(
-        'CHUNKED_UPLOAD',
-        `Subida grande completada: ${successCount} exitosos${failCount > 0 ? `, ${failCount} fallidos` : ''}.`,
-      );
-      this.refresh();
-    }
+    // Start workers
+    const workers = Array.from({ length: Math.min(files.length, CONCURRENCY_LIMIT) }).map(() => worker());
+    await Promise.all(workers);
+
+    this.refresh();
   }
 
   onConflictResolve(policy: ConflictPolicy): void {
@@ -589,13 +579,6 @@ export class ExplorerPage {
 
     this.filesApi.upload(this.currentPath(), files, policy).subscribe({
       next: (response) => {
-        const total = firstRound + response.uploaded.length;
-        this.feedback.success(
-          'UPLOAD',
-          `Upload completado: ${total} exitosos${
-            response.failed.length > 0 ? `, ${response.failed.length} fallidos` : ''
-          }.`
-        );
         this.refresh();
       },
       error: () => {},
@@ -609,9 +592,6 @@ export class ExplorerPage {
     this.firstRoundUploadedCount = 0;
     this.conflictingFileNames.set([]);
 
-    if (firstRound > 0) {
-      this.feedback.success('UPLOAD', `${firstRound} archivo(s) subidos. Conflictos omitidos.`);
-    }
     this.refresh();
   }
 

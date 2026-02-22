@@ -1,7 +1,7 @@
 import { DOCUMENT } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject, input, output, signal } from '@angular/core';
 
-export type ContextMenuActionType = 'rename' | 'move' | 'copy' | 'delete' | 'download' | 'info' | 'share';
+export type ContextMenuActionType = 'rename' | 'move' | 'copy' | 'delete' | 'download' | 'share' | 'compress' | 'decompress';
 
 export interface ContextMenuEvent {
   type: ContextMenuActionType;
@@ -76,6 +76,29 @@ export interface ContextMenuEvent {
         <button
           type="button"
           class="flex w-full items-center gap-2.5 rounded-lg px-2 py-1.5 text-left transition-colors hover:bg-white/10 hover:text-white disabled:opacity-50 disabled:hover:bg-transparent disabled:hover:text-zinc-200"
+          [disabled]="selectedCount() === 0"
+          (click)="onAction('compress')"
+        >
+          <i class="fa-solid fa-file-zipper fa-fw text-zinc-400"></i>
+          Comprimir
+        </button>
+
+        @if (isZipFile()) {
+          <button
+            type="button"
+            class="flex w-full items-center gap-2.5 rounded-lg px-2 py-1.5 text-left transition-colors hover:bg-white/10 hover:text-white disabled:opacity-50 disabled:hover:bg-transparent disabled:hover:text-zinc-200"
+            (click)="onAction('decompress')"
+          >
+            <i class="fa-solid fa-box-open fa-fw text-zinc-400"></i>
+            Extraer aquí
+          </button>
+        }
+
+        <div class="my-1 h-px bg-white/10"></div>
+
+        <button
+          type="button"
+          class="flex w-full items-center gap-2.5 rounded-lg px-2 py-1.5 text-left transition-colors hover:bg-white/10 hover:text-white disabled:opacity-50 disabled:hover:bg-transparent disabled:hover:text-zinc-200"
           [disabled]="selectedCount() !== 1"
           (click)="onAction('download')"
         >
@@ -102,16 +125,6 @@ export interface ContextMenuEvent {
           </div>
         }
 
-        <button
-          type="button"
-          class="flex w-full items-center gap-2.5 rounded-lg px-2 py-1.5 text-left transition-colors hover:bg-white/10 hover:text-white disabled:opacity-50 disabled:hover:bg-transparent disabled:hover:text-zinc-200"
-          [disabled]="selectedCount() !== 1"
-          (click)="onAction('info')"
-        >
-          <i class="fa-solid fa-circle-info fa-fw text-zinc-400"></i>
-          Información
-        </button>
-
         <div class="my-1 h-px bg-white/10"></div>
 
         <button
@@ -135,6 +148,7 @@ export class ContextMenuComponent {
   readonly y = input(0);
   readonly selectedCount = input(0);
   readonly canShare = input(false);
+  readonly isZipFile = input(false);
 
   readonly action = output<ContextMenuEvent>();
   readonly close = output<void>();

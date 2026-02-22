@@ -126,6 +126,17 @@ export interface CopyResponse {
   failed: MoveCopyFailure[];
 }
 
+export interface CompressResponse {
+  path: string;
+  size: number;
+}
+
+export interface DecompressResponse {
+  destination: string;
+  files: string[];
+  conflicts?: string[];
+}
+
 export interface DeleteFailure {
   path: string;
   reason: string;

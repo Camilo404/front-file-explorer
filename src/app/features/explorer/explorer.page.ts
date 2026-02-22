@@ -144,6 +144,7 @@ interface ActiveModalConfig {
               (download)="downloadSelected()"
               (rename)="renameSelected()"
               (delete)="deleteSelected()"
+              (decompress)="decompressSelected()"
             />
           </div>
         }
@@ -155,6 +156,7 @@ interface ActiveModalConfig {
         [y]="contextMenuY()"
         [selectedCount]="selectedCount()"
         [canShare]="canShare()"
+        [isZipFile]="isZipFileSelected()"
         (action)="handleContextMenuAction($event)"
         (close)="closeContextMenu()"
       />
@@ -278,6 +280,11 @@ export class ExplorerPage {
   readonly canShare = computed(() => {
     const role = this.authStore.user()?.role;
     return role === 'editor' || role === 'admin';
+  });
+  readonly isZipFileSelected = computed(() => {
+    const paths = this.selectedPaths();
+    if (paths.length !== 1) return false;
+    return paths[0].toLowerCase().endsWith('.zip');
   });
   readonly parentPath = computed<string | null>(() => {
     const p = this.currentPath();
@@ -525,7 +532,7 @@ export class ExplorerPage {
             if (!isConflict) {
               this.uploadTracker.markError(entryIds[i], failure.reason);
             } else {
-              this.uploadTracker.markDone(entryIds[i]);
+              this.uploadTracker.markError(entryIds[i], 'Conflicto detectado');
             }
           } else {
             this.uploadTracker.markDone(entryIds[i]);
@@ -586,6 +593,15 @@ export class ExplorerPage {
   }
 
   onConflictResolve(policy: ConflictPolicy): void {
+    // Si tenemos una acción pendiente (ej. descomprimir), la ejecutamos
+    if (this.pendingModalAction) {
+      this.isConflictModalOpen.set(false);
+      this.pendingModalAction(policy);
+      this.pendingModalAction = null;
+      this.conflictingFileNames.set([]);
+      return;
+    }
+
     this.isConflictModalOpen.set(false);
     const files = this.pendingConflictFiles;
     const firstRound = this.firstRoundUploadedCount;
@@ -602,6 +618,13 @@ export class ExplorerPage {
   }
 
   onConflictCancel(): void {
+    if (this.pendingModalAction) {
+      this.pendingModalAction = null;
+      this.conflictingFileNames.set([]);
+      this.isConflictModalOpen.set(false);
+      return;
+    }
+
     const firstRound = this.firstRoundUploadedCount;
     this.isConflictModalOpen.set(false);
     this.pendingConflictFiles = [];
@@ -728,20 +751,6 @@ export class ExplorerPage {
         anchor.download = target.split('/').pop() ?? 'download';
         anchor.click();
         URL.revokeObjectURL(url);
-      },
-      error: () => {},
-    });
-  }
-
-  showInfoSelected(): void {
-    const target = this.selectedPaths()[0];
-    if (!target) {
-      return;
-    }
-
-    this.filesApi.info(target).subscribe({
-      next: (info) => {
-        this.feedback.info('INFO', `${info.name} | ${info.type} | ${info.size_human || info.size}`);
       },
       error: () => {},
     });
@@ -910,14 +919,85 @@ export class ExplorerPage {
       case 'download':
         this.downloadSelected();
         break;
-      case 'info':
-        this.showInfoSelected();
-        break;
       case 'share':
         this.shareSelected(event.payload);
         break;
+      case 'compress':
+        this.compressSelected();
+        break;
+      case 'decompress':
+        this.decompressSelected();
+        break;
     }
   }
+
+  compressSelected(): void {
+    const paths = this.selectedPaths();
+    if (paths.length === 0) return;
+
+    this.openModal(
+      {
+        title: 'Comprimir',
+        label: 'Nombre del archivo ZIP',
+        placeholder: 'archivo.zip',
+        confirmLabel: 'Comprimir',
+      },
+      (name) => {
+        let zipName = name;
+        if (!zipName.toLowerCase().endsWith('.zip')) {
+          zipName += '.zip';
+        }
+
+        this.operationsApi.compress(paths, this.currentPath(), zipName).subscribe({
+          next: (response) => {
+            this.feedback.success('COMPRESS', `Archivo comprimido: ${response.path}`);
+            this.refresh();
+          },
+          error: (err: unknown) => {
+             // El interceptor maneja el error, pero podemos añadir lógica extra si se requiere
+          },
+        });
+      }
+    );
+  }
+
+  decompressSelected(): void {
+    const paths = this.selectedPaths();
+    if (paths.length !== 1) return;
+
+    const zipPath = paths[0];
+
+    // Por defecto extraemos en la carpeta actual
+    const destination = this.currentPath(); 
+
+    this.operationsApi.decompress(zipPath, destination).subscribe({
+      next: (response) => {
+        this.feedback.success('DECOMPRESS', `Archivos extraídos en: ${response.destination}`);
+        this.refresh();
+      },
+      error: (err: any) => {
+        if (err.status === 409 && err.error?.data?.conflicts) {
+          const conflicts = err.error.data.conflicts as string[];
+          this.conflictingFileNames.set(conflicts);
+
+          this.pendingModalAction = (policy: string) => {
+            this.operationsApi.decompress(zipPath, destination, policy as ConflictPolicy).subscribe({
+              next: (response) => {
+                this.feedback.success('DECOMPRESS', `Archivos extraídos con política '${policy}'`);
+                this.refresh();
+              },
+              error: (err) => {
+                this.feedback.error('DECOMPRESS', 'Error al descomprimir con conflicto resuelto.');
+              },
+            });
+          };
+
+          this.isConflictModalOpen.set(true);
+        }
+      },
+    });
+  }
+
 
   private loadItems(): void {
     const filters = this.searchFilters();

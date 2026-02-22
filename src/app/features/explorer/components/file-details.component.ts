@@ -82,6 +82,19 @@ import { isDirectory, getFileIconClass, getFileIconColorClass } from '../../../s
                     <span>Download</span>
                   </button>
                 }
+
+                @if (item() && isZip(item()!)) {
+                  <button
+                    type="button"
+                    class="flex items-center gap-3 rounded-xl bg-zinc-800/50 px-4 py-3 text-sm font-medium text-zinc-200 transition-all hover:bg-zinc-700 hover:text-white hover:shadow-lg border border-white/5 hover:border-white/10 text-left group"
+                    (click)="decompress.emit(item()!)"
+                  >
+                    <div class="flex size-8 items-center justify-center rounded-lg bg-white/5 text-zinc-400 group-hover:text-white transition-colors">
+                      <i class="fa-solid fa-box-open"></i>
+                    </div>
+                    <span>Extract Here</span>
+                  </button>
+                }
                 
                 <div class="grid grid-cols-2 gap-2">
                   <button
@@ -119,6 +132,11 @@ export class FileDetailsComponent {
   readonly download = output<FileItem>();
   readonly rename = output<FileItem>();
   readonly delete = output<FileItem>();
+  readonly decompress = output<FileItem>();
+
+  isZip(item: FileItem): boolean {
+    return item.name.toLowerCase().endsWith('.zip');
+  }
 
   getIconClass(item: FileItem): string {
     return `${getFileIconClass(item)} ${getFileIconColorClass(item)}`;

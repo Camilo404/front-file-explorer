@@ -4,7 +4,9 @@ import { map, Observable } from 'rxjs';
 
 import {
   ApiResponse,
+  CompressResponse,
   CopyResponse,
+  DecompressResponse,
   DeleteResponse,
   MoveResponse,
   RenameResponse,
@@ -41,6 +43,26 @@ export class OperationsApiService {
         conflict_policy: conflictPolicy,
       })
       .pipe(map((response) => response.data as CopyResponse));
+  }
+
+  compress(sources: string[], destination: string, name: string): Observable<CompressResponse> {
+    return this.http
+      .post<ApiResponse<CompressResponse>>('/api/v1/files/compress', {
+        sources,
+        destination,
+        name,
+      })
+      .pipe(map((response) => response.data as CompressResponse));
+  }
+
+  decompress(source: string, destination: string, conflictPolicy?: ConflictPolicy): Observable<DecompressResponse> {
+    return this.http
+      .post<ApiResponse<DecompressResponse>>('/api/v1/files/decompress', {
+        source,
+        destination,
+        conflict_policy: conflictPolicy,
+      })
+      .pipe(map((response) => response.data as DecompressResponse));
   }
 
   delete(paths: string[]): Observable<DeleteResponse> {

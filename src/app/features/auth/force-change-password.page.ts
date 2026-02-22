@@ -26,15 +26,15 @@ const passwordStrengthValidator: ValidatorFn = (control: AbstractControl): Valid
   imports: [ReactiveFormsModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <div class="flex min-h-screen items-center justify-center bg-zinc-950 p-4">
-      <div class="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-amber-900/20 via-zinc-950 to-zinc-950"></div>
+    <div class="flex min-h-screen items-center justify-center bg-zinc-950 p-4 font-sans">
+      <!-- Background effects -->
+      <div class="absolute inset-0 bg-[radial-gradient(ellipse_at_top,var(--tw-gradient-stops))] from-amber-900/20 via-zinc-950 to-zinc-950"></div>
 
-      <section class="relative w-full max-w-md rounded-3xl border border-white/5 bg-zinc-900/40 p-8 shadow-2xl backdrop-blur-2xl ring-1 ring-white/5">
+      <section class="relative w-full max-w-md overflow-hidden rounded-3xl border border-white/5 bg-zinc-900/40 p-8 shadow-2xl backdrop-blur-2xl ring-1 ring-white/5 transition-all duration-300 hover:shadow-amber-900/10">
+        <!-- Header -->
         <div class="mb-8 text-center">
-          <div class="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-amber-500/10 text-amber-500 ring-1 ring-amber-500/20">
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="h-8 w-8">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z" />
-            </svg>
+          <div class="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-full bg-amber-500/10 text-amber-500 ring-1 ring-amber-500/20 shadow-[0_0_15px_-3px_rgba(245,158,11,0.3)]">
+            <i class="fa-solid fa-key text-2xl"></i>
           </div>
           <h1 class="text-2xl font-bold tracking-tight text-white">Cambio de contraseña requerido</h1>
           <p class="mt-2 text-sm text-zinc-400">
@@ -42,107 +42,146 @@ const passwordStrengthValidator: ValidatorFn = (control: AbstractControl): Valid
           </p>
         </div>
 
-        <form class="space-y-5" [formGroup]="form" (ngSubmit)="submit()">
+        <form class="space-y-6" [formGroup]="form" (ngSubmit)="submit()">
+          <!-- Current Password -->
           <div>
-            <label class="mb-1.5 block text-sm font-medium text-zinc-300">Contraseña actual</label>
-            <div class="relative">
-              <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-zinc-500">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="h-5 w-5">
-                  <path fill-rule="evenodd" d="M10 1a4.5 4.5 0 00-4.5 4.5V9H5a2 2 0 00-2 2v6a2 2 0 002 2h10a2 2 0 002-2v-6a2 2 0 00-2-2h-.5V5.5A4.5 4.5 0 0010 1zm3 8V5.5a3 3 0 10-6 0V9h6z" clip-rule="evenodd" />
-                </svg>
+            <label class="mb-2 block text-sm font-medium text-zinc-300" for="currentPassword">Contraseña actual</label>
+            <div class="relative group">
+              <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-zinc-500 transition-colors group-focus-within:text-amber-500">
+                <i class="fa-solid fa-lock"></i>
               </div>
               <input
-                type="password"
+                id="currentPassword"
+                [type]="showCurrentPassword() ? 'text' : 'password'"
                 formControlName="currentPassword"
                 placeholder="••••••••"
-                class="block w-full rounded-xl border border-white/10 bg-white/5 py-2.5 pl-10 pr-4 text-sm text-zinc-200 placeholder-zinc-500 transition-colors focus:border-amber-500/50 focus:bg-white/10 focus:outline-none focus:ring-1 focus:ring-amber-500/50"
+                [attr.disabled]="loading() ? true : null"
+                class="block w-full rounded-xl border border-white/10 bg-white/5 py-3 pl-10 pr-10 text-sm text-zinc-200 placeholder-zinc-500 transition-all focus:border-amber-500/50 focus:bg-white/10 focus:outline-none focus:ring-2 focus:ring-amber-500/20 disabled:opacity-50 disabled:cursor-not-allowed"
               />
+              <button
+                type="button"
+                (click)="toggleCurrentPassword()"
+                [disabled]="loading()"
+                class="absolute inset-y-0 right-0 flex items-center pr-3 text-zinc-500 hover:text-zinc-300 focus:outline-none disabled:opacity-50 transition-colors"
+                [attr.aria-label]="showCurrentPassword() ? 'Ocultar contraseña' : 'Mostrar contraseña'"
+              >
+                <i class="fa-solid" [class.fa-eye]="!showCurrentPassword()" [class.fa-eye-slash]="showCurrentPassword()"></i>
+              </button>
             </div>
           </div>
 
+          <!-- New Password -->
           <div>
-            <label class="mb-1.5 block text-sm font-medium text-zinc-300">Nueva contraseña</label>
-            <div class="relative">
-              <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-zinc-500">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="h-5 w-5">
-                  <path fill-rule="evenodd" d="M8 7a5 5 0 113.61 4.804l-1.903 1.903A1 1 0 019 14H8v1a1 1 0 01-1 1H6v1a1 1 0 01-1 1H3a1 1 0 01-1-1v-2a1 1 0 01.293-.707L8.196 8.39A5.002 5.002 0 018 7zm5-3a.75.75 0 000 1.5A1.5 1.5 0 0114.5 7 .75.75 0 0016 7a3 3 0 00-3-3z" clip-rule="evenodd" />
-                </svg>
+            <label class="mb-2 block text-sm font-medium text-zinc-300" for="newPassword">Nueva contraseña</label>
+            <div class="relative group">
+              <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-zinc-500 transition-colors group-focus-within:text-amber-500">
+                <i class="fa-solid fa-key"></i>
               </div>
               <input
-                type="password"
+                id="newPassword"
+                [type]="showNewPassword() ? 'text' : 'password'"
                 formControlName="newPassword"
                 placeholder="••••••••"
-                class="block w-full rounded-xl border border-white/10 bg-white/5 py-2.5 pl-10 pr-4 text-sm text-zinc-200 placeholder-zinc-500 transition-colors focus:border-amber-500/50 focus:bg-white/10 focus:outline-none focus:ring-1 focus:ring-amber-500/50"
+                [attr.disabled]="loading() ? true : null"
+                class="block w-full rounded-xl border border-white/10 bg-white/5 py-3 pl-10 pr-10 text-sm text-zinc-200 placeholder-zinc-500 transition-all focus:border-amber-500/50 focus:bg-white/10 focus:outline-none focus:ring-2 focus:ring-amber-500/20 disabled:opacity-50 disabled:cursor-not-allowed"
               />
+              <button
+                type="button"
+                (click)="toggleNewPassword()"
+                [disabled]="loading()"
+                class="absolute inset-y-0 right-0 flex items-center pr-3 text-zinc-500 hover:text-zinc-300 focus:outline-none disabled:opacity-50 transition-colors"
+                [attr.aria-label]="showNewPassword() ? 'Ocultar contraseña' : 'Mostrar contraseña'"
+              >
+                <i class="fa-solid" [class.fa-eye]="!showNewPassword()" [class.fa-eye-slash]="showNewPassword()"></i>
+              </button>
             </div>
+            
+            <!-- Password Strength -->
             @if (form.controls.newPassword.touched && form.controls.newPassword.errors?.['passwordStrength']) {
-              <div class="mt-2 space-y-1">
-                <p class="text-xs text-zinc-500">La contraseña debe contener:</p>
-                @for (req of form.controls.newPassword.errors?.['passwordStrength']; track req) {
-                  <p class="text-xs text-amber-400">• {{ req }}</p>
-                }
+              <div class="mt-3 rounded-lg bg-zinc-900/50 p-3 border border-white/5 animate-in fade-in slide-in-from-top-1">
+                <p class="mb-2 text-xs font-medium text-zinc-400">Requisitos de contraseña:</p>
+                <ul class="space-y-1">
+                  @for (req of form.controls.newPassword.errors?.['passwordStrength']; track req) {
+                    <li class="flex items-center text-xs text-amber-500/90">
+                      <i class="fa-solid fa-circle-xmark mr-1.5 text-[10px]"></i>
+                      <span>{{ req }}</span>
+                    </li>
+                  }
+                </ul>
               </div>
             }
           </div>
 
+          <!-- Confirm Password -->
           <div>
-            <label class="mb-1.5 block text-sm font-medium text-zinc-300">Confirmar nueva contraseña</label>
-            <div class="relative">
-              <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-zinc-500">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="h-5 w-5">
-                  <path fill-rule="evenodd" d="M8 7a5 5 0 113.61 4.804l-1.903 1.903A1 1 0 019 14H8v1a1 1 0 01-1 1H6v1a1 1 0 01-1 1H3a1 1 0 01-1-1v-2a1 1 0 01.293-.707L8.196 8.39A5.002 5.002 0 018 7zm5-3a.75.75 0 000 1.5A1.5 1.5 0 0114.5 7 .75.75 0 0016 7a3 3 0 00-3-3z" clip-rule="evenodd" />
-                </svg>
+            <label class="mb-2 block text-sm font-medium text-zinc-300" for="confirmPassword">Confirmar nueva contraseña</label>
+            <div class="relative group">
+              <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-zinc-500 transition-colors group-focus-within:text-amber-500">
+                <i class="fa-solid fa-check-double"></i>
               </div>
               <input
-                type="password"
+                id="confirmPassword"
+                [type]="showConfirmPassword() ? 'text' : 'password'"
                 formControlName="confirmPassword"
                 placeholder="••••••••"
-                class="block w-full rounded-xl border border-white/10 bg-white/5 py-2.5 pl-10 pr-4 text-sm text-zinc-200 placeholder-zinc-500 transition-colors focus:border-amber-500/50 focus:bg-white/10 focus:outline-none focus:ring-1 focus:ring-amber-500/50"
+                [attr.disabled]="loading() ? true : null"
+                class="block w-full rounded-xl border border-white/10 bg-white/5 py-3 pl-10 pr-10 text-sm text-zinc-200 placeholder-zinc-500 transition-all focus:border-amber-500/50 focus:bg-white/10 focus:outline-none focus:ring-2 focus:ring-amber-500/20 disabled:opacity-50 disabled:cursor-not-allowed"
               />
+              <button
+                type="button"
+                (click)="toggleConfirmPassword()"
+                [disabled]="loading()"
+                class="absolute inset-y-0 right-0 flex items-center pr-3 text-zinc-500 hover:text-zinc-300 focus:outline-none disabled:opacity-50 transition-colors"
+                [attr.aria-label]="showConfirmPassword() ? 'Ocultar contraseña' : 'Mostrar contraseña'"
+              >
+                <i class="fa-solid" [class.fa-eye]="!showConfirmPassword()" [class.fa-eye-slash]="showConfirmPassword()"></i>
+              </button>
             </div>
             @if (form.controls.confirmPassword.touched && form.hasError('passwordMismatch')) {
-              <p class="mt-1.5 text-xs text-red-400">Las contraseñas no coinciden.</p>
+              <div class="mt-2 flex items-center gap-2 text-xs text-red-400 animate-in fade-in">
+                <i class="fa-solid fa-triangle-exclamation"></i>
+                <p>Las contraseñas no coinciden.</p>
+              </div>
             }
           </div>
 
+          <!-- Error Message -->
           @if (errorMessage()) {
-            <div class="flex items-center gap-2 rounded-lg border border-red-500/20 bg-red-500/10 p-3 text-sm text-red-400">
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="h-5 w-5 shrink-0">
-                <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-5a.75.75 0 01.75.75v4.5a.75.75 0 01-1.5 0v-4.5A.75.75 0 0110 5zm0 10a1 1 0 100-2 1 1 0 000 2z" clip-rule="evenodd" />
-              </svg>
+            <div class="flex items-center gap-3 rounded-xl border border-red-500/20 bg-red-500/10 p-4 text-sm text-red-400 animate-in fade-in slide-in-from-top-2">
+              <i class="fa-solid fa-circle-exclamation shrink-0"></i>
               <p>{{ errorMessage() }}</p>
             </div>
           }
 
+          <!-- Success Message -->
           @if (successMessage()) {
-            <div class="flex items-center gap-2 rounded-lg border border-green-500/20 bg-green-500/10 p-3 text-sm text-green-400">
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="h-5 w-5 shrink-0">
-                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.857-9.809a.75.75 0 00-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 10-1.06 1.061l2.5 2.5a.75.75 0 001.137-.089l4-5.5z" clip-rule="evenodd" />
-              </svg>
+            <div class="flex items-center gap-3 rounded-xl border border-green-500/20 bg-green-500/10 p-4 text-sm text-green-400 animate-in fade-in slide-in-from-top-2">
+              <i class="fa-solid fa-circle-check shrink-0"></i>
               <p>{{ successMessage() }}</p>
             </div>
           }
 
+          <!-- Submit Button -->
           <button
             type="submit"
             [disabled]="form.invalid || loading()"
-            class="group relative flex w-full justify-center rounded-lg bg-amber-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-all hover:bg-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 focus:ring-offset-zinc-900 disabled:cursor-not-allowed disabled:opacity-50"
+            class="group relative flex w-full items-center justify-center rounded-xl bg-amber-600 px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-amber-500/20 transition-all hover:bg-amber-500 hover:shadow-amber-500/30 hover:-translate-y-0.5 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 focus:ring-offset-zinc-900 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:translate-y-0 disabled:hover:shadow-none"
           >
             @if (loading()) {
-              <svg class="mr-2 h-5 w-5 animate-spin text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-              </svg>
-              Cambiando...
+              <i class="fa-solid fa-circle-notch animate-spin mr-2"></i>
+              <span>Cambiando...</span>
             } @else {
-              Cambiar contraseña
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="ml-2 h-5 w-5 transition-transform group-hover:translate-x-1">
-                <path fill-rule="evenodd" d="M10 1a4.5 4.5 0 00-4.5 4.5V9H5a2 2 0 00-2 2v6a2 2 0 002 2h10a2 2 0 002-2v-6a2 2 0 00-2-2h-.5V5.5A4.5 4.5 0 0010 1zm3 8V5.5a3 3 0 10-6 0V9h6z" clip-rule="evenodd" />
-              </svg>
+              <span>Cambiar contraseña</span>
+              <i class="fa-solid fa-arrow-right ml-2 transition-transform group-hover:translate-x-1"></i>
             }
           </button>
         </form>
       </section>
+      
+      <!-- Footer -->
+      <footer class="absolute bottom-4 text-center text-xs text-zinc-600">
+        &copy; {{ currentYear }} File Explorer. All rights reserved.
+      </footer>
     </div>
   `,
 })
@@ -155,6 +194,12 @@ export class ForceChangePasswordPage {
   readonly loading = signal(false);
   readonly errorMessage = signal('');
   readonly successMessage = signal('');
+  
+  readonly showCurrentPassword = signal(false);
+  readonly showNewPassword = signal(false);
+  readonly showConfirmPassword = signal(false);
+  
+  readonly currentYear = new Date().getFullYear();
 
   readonly form = this.fb.nonNullable.group(
     {
@@ -164,6 +209,18 @@ export class ForceChangePasswordPage {
     },
     { validators: [this.passwordMatchValidator] }
   );
+
+  toggleCurrentPassword(): void {
+    this.showCurrentPassword.update((v) => !v);
+  }
+
+  toggleNewPassword(): void {
+    this.showNewPassword.update((v) => !v);
+  }
+
+  toggleConfirmPassword(): void {
+    this.showConfirmPassword.update((v) => !v);
+  }
 
   private passwordMatchValidator(group: AbstractControl): ValidationErrors | null {
     const newPassword = group.get('newPassword')?.value;

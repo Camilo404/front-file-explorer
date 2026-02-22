@@ -9,62 +9,88 @@ import { ChangeDetectionStrategy, Component, ElementRef, effect, input, output, 
   template: `
     @if (open()) {
       <div
-        class="fixed inset-0 z-50 flex items-center justify-center p-4"
+        class="fixed inset-0 z-60 flex items-center justify-center p-4 font-sans"
         role="dialog"
         aria-modal="true"
         [attr.aria-labelledby]="titleId"
       >
         <!-- Backdrop -->
         <div
-          class="absolute inset-0 bg-black/60 backdrop-blur-sm"
+          class="absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity duration-300 animate-in fade-in"
           aria-hidden="true"
           (click)="cancel.emit()"
         ></div>
 
         <!-- Panel -->
         <div
-          class="relative w-full max-w-md rounded-2xl border border-white/10 bg-zinc-900 p-6 shadow-2xl"
+          class="relative w-full max-w-md scale-100 overflow-hidden rounded-3xl border border-white/10 bg-zinc-900 shadow-2xl transition-all duration-300 animate-in zoom-in-95 slide-in-from-bottom-2"
           (click)="$event.stopPropagation()"
         >
-          <h2 [id]="titleId" class="mb-4 text-base font-semibold text-white">
-            {{ title() }}
-          </h2>
+          <!-- Header -->
+          <div class="border-b border-white/5 bg-white/5 p-6">
+            <h2 [id]="titleId" class="text-lg font-bold tracking-tight text-white">
+              {{ title() }}
+            </h2>
+          </div>
 
-          @if (label()) {
-            <label [for]="inputId" class="mb-1.5 block text-sm font-medium text-zinc-300">
-              {{ label() }}
-            </label>
-          }
+          <!-- Body -->
+          <div class="p-6">
+            @if (label()) {
+              <label [for]="inputId" class="mb-2 block text-sm font-medium text-zinc-300">
+                {{ label() }}
+              </label>
+            }
 
-          <input
-            #inputEl
-            type="text"
-            [id]="inputId"
-            [value]="inputValue()"
-            [placeholder]="placeholder() ?? ''"
-            class="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-zinc-200 placeholder-zinc-500 transition-colors focus:border-violet-500/50 focus:bg-white/10 focus:outline-none focus:ring-1 focus:ring-violet-500/50"
-            (input)="onInput($event)"
-            (keydown.enter)="onConfirm()"
-          />
+            <div class="relative group">
+              <input
+                #inputEl
+                type="text"
+                [id]="inputId"
+                [value]="inputValue()"
+                [placeholder]="placeholder() ?? ''"
+                class="block w-full rounded-xl border border-white/10 bg-black/20 py-3 pl-4 pr-4 text-sm text-zinc-200 placeholder-zinc-500 transition-all focus:border-violet-500/50 focus:bg-white/5 focus:outline-none focus:ring-2 focus:ring-violet-500/20"
+                [class.border-red-500/50]="isDanger() && inputValue().length > 0"
+                [class.focus:border-red-500/50]="isDanger()"
+                [class.focus:ring-red-500/20]="isDanger()"
+                (input)="onInput($event)"
+                (keydown.enter)="onConfirm()"
+              />
+              @if (inputValue().length > 0) {
+                <button
+                  type="button"
+                  class="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-zinc-300 focus:outline-none"
+                  (click)="inputValue.set(''); inputEl.focus()"
+                  aria-label="Limpiar campo"
+                >
+                  <i class="fa-solid fa-circle-xmark"></i>
+                </button>
+              }
+            </div>
 
-          <div class="mt-5 flex justify-end gap-2">
-            <button
-              type="button"
-              class="rounded-lg px-4 py-2 text-sm font-medium text-zinc-300 transition-all hover:bg-white/10 hover:text-white"
-              (click)="cancel.emit()"
-            >
-              Cancelar
-            </button>
-            <button
-              type="button"
-              class="rounded-lg px-4 py-2 text-sm font-medium transition-all"
-              [class]="isDanger()
-                ? 'bg-red-500/20 text-red-400 hover:bg-red-500/30 hover:text-red-300'
-                : 'bg-violet-500/20 text-violet-400 hover:bg-violet-500/30 hover:text-violet-300'"
-              (click)="onConfirm()"
-            >
-              {{ confirmLabel() ?? 'Confirmar' }}
-            </button>
+            <!-- Actions -->
+            <div class="mt-8 flex justify-end gap-3">
+              <button
+                type="button"
+                class="rounded-xl px-4 py-2.5 text-sm font-medium text-zinc-400 transition-all hover:bg-white/5 hover:text-zinc-200 active:scale-95"
+                (click)="cancel.emit()"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                class="flex items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-semibold text-white shadow-lg transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+                [disabled]="!inputValue().trim()"
+                [class]="isDanger()
+                  ? 'bg-red-600 hover:bg-red-500 shadow-red-500/20 hover:shadow-red-500/30'
+                  : 'bg-violet-600 hover:bg-violet-500 shadow-violet-500/20 hover:shadow-violet-500/30'"
+                (click)="onConfirm()"
+              >
+                <span>{{ confirmLabel() ?? 'Confirmar' }}</span>
+                @if (inputValue().trim()) {
+                  <i class="fa-solid fa-arrow-right text-xs opacity-70"></i>
+                }
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -125,3 +151,4 @@ export class InputModalComponent {
     }
   }
 }
+

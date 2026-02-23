@@ -2,6 +2,7 @@ import { ChangeDetectionStrategy, Component, DestroyRef, computed, inject, signa
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { HttpEventType } from '@angular/common/http';
 import { ActivatedRoute, Router } from '@angular/router';
+import { map, switchMap } from 'rxjs';
 
 import { ExplorerApiService } from '../../core/api/explorer-api.service';
 import { FilesApiService } from '../../core/api/files-api.service';
@@ -833,19 +834,27 @@ export class ExplorerPage {
       ...(duration ? { expires_in: duration } : {}),
     };
 
-    this.sharesApi.create(payload).subscribe({
-      next: (share) => {
-        const publicUrl = this.sharesApi.getAbsolutePublicDownloadUrl(share.token);
-        navigator.clipboard.writeText(publicUrl).then(
-          () => this.feedback.success('SHARE', `Enlace copiado al portapapeles para: ${target}`),
-          () => this.feedback.success('SHARE', `Compartido: ${publicUrl}`)
-        );
-        this.sharingPath.set(null);
-      },
-      error: () => {
-        this.sharingPath.set(null);
-      },
-    });
+    this.sharesApi.create(payload)
+      .pipe(
+        switchMap((share) => 
+          this.sharesApi.list().pipe(
+            map((shares) => shares.find((s) => s.id === share.id) || share)
+          )
+        )
+      )
+      .subscribe({
+        next: (share) => {
+          const publicUrl = this.sharesApi.getAbsolutePublicDownloadUrl(share.token);
+          navigator.clipboard.writeText(publicUrl).then(
+            () => this.feedback.success('SHARE', `Enlace copiado al portapapeles para: ${target}`),
+            () => this.feedback.success('SHARE', `Compartido: ${publicUrl}`)
+          );
+          this.sharingPath.set(null);
+        },
+        error: () => {
+          this.sharingPath.set(null);
+        },
+      });
   }
 
   showItemInfo(path: string): void {

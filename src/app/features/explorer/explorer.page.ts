@@ -9,13 +9,15 @@ import { ConflictPolicy, OperationsApiService } from '../../core/api/operations-
 import { SearchApiService } from '../../core/api/search-api.service';
 import { SharesApiService } from '../../core/api/shares-api.service';
 import { AuthStoreService } from '../../core/auth/auth-store.service';
+import { WebSocketService } from '../../core/websocket/websocket.service';
+import { WSEventType, WSFilePayload } from '../../core/websocket/websocket.models';
 import { ErrorStoreService } from '../../core/errors/error-store.service';
 import { API_BASE_URL } from '../../core/http/api-base-url.token';
 import { UploadTrackerService } from '../../core/uploads/upload-tracker.service';
 import { ChunkedUploadService, CHUNKED_UPLOAD_THRESHOLD } from '../../core/uploads/chunked-upload.service';
 import { FileItem, TreeNode } from '../../core/models/api.models';
 import { isDirectory as isDirectoryUtil, isImage as isImageUtil, isVideo as isVideoUtil } from '../../shared/utils/file-item.utils';
-import { ContextMenuActionType, ContextMenuComponent, ContextMenuEvent } from './components/context-menu.component';
+import { ContextMenuComponent, ContextMenuEvent } from './components/context-menu.component';
 import { ExplorerToolbarComponent, SearchFilters } from './components/explorer-toolbar.component';
 import { FileListComponent } from './components/file-list.component';
 import { ImageViewerComponent } from './components/image-viewer.component';
@@ -215,6 +217,7 @@ export class ExplorerPage {
   private readonly operationsApi = inject(OperationsApiService);
   private readonly sharesApi = inject(SharesApiService);
   private readonly authStore = inject(AuthStoreService);
+  private readonly wsService = inject(WebSocketService);
   private readonly apiBaseUrl = inject(API_BASE_URL);
   private readonly feedback = inject(ErrorStoreService);
   private readonly uploadTracker = inject(UploadTrackerService);
@@ -338,10 +341,72 @@ export class ExplorerPage {
     });
 
     this.refresh();
+
+    // Listen for real-time updates
+    this.wsService.onTypes<any>([
+      WSEventType.FileCreated,
+      WSEventType.FileUploaded,
+      WSEventType.FileDeleted,
+      WSEventType.FileMoved,
+      WSEventType.FileCopied,
+      WSEventType.DirCreated,
+      WSEventType.FileCompressed,
+      WSEventType.FileDecompressed
+    ]).pipe(
+      takeUntilDestroyed(this.destroyRef)
+    ).subscribe(event => {
+      const payload = event.payload;
+      const current = this.currentPath();
+      
+      let shouldRefresh = false;
+
+      // Handle Rename/Move/Copy payloads (RenameResponse | MoveCopyResult)
+      if (event.type === WSEventType.FileMoved || event.type === WSEventType.FileCopied) {
+        // Rename payload: { old_path, new_path, name }
+        // Move payload: { from, to }
+        const src = payload.from || payload.old_path;
+        const dest = payload.to || payload.new_path;
+
+        if (src && this.getParentPath(src) === current) shouldRefresh = true;
+        if (dest && this.getParentPath(dest) === current) shouldRefresh = true;
+      } 
+      else if (event.type === WSEventType.FileDeleted) {
+        if (payload.path && this.getParentPath(payload.path) === current) {
+          shouldRefresh = true;
+        }
+      } 
+      else if (event.type === WSEventType.FileCompressed) {
+         // Payload: { path: string, size: number }
+         if (payload.path && this.getParentPath(payload.path) === current) {
+           shouldRefresh = true;
+         }
+      }
+      else if (event.type === WSEventType.FileDecompressed) {
+         // Payload: { destination: string, files: string[] }
+         if (payload.destination === current) {
+           shouldRefresh = true;
+         } else if (payload.destination && this.getParentPath(payload.destination) === current) {
+           // If destination is a folder inside current, we see the folder creation/modification
+           shouldRefresh = true;
+         }
+      }
+      // Handle Created/Uploaded/DirCreated (WSFilePayload)
+      else {
+         if (payload.parent === current) {
+            shouldRefresh = true;
+         } else if (payload.path && this.getParentPath(payload.path) === current) {
+            shouldRefresh = true;
+         }
+      }
+
+      if (shouldRefresh) {
+        this.refresh(true);
+      }
+    });
   }
 
-  refresh(): void {
-    this.loadItems();
+  refresh(keepSelection = false): void {
+    this.loadItems(keepSelection);
 
     this.explorerApi.tree({ path: '/', depth: 1, include_files: false, limit: 200 }).subscribe({
       next: (result) => {
@@ -999,7 +1064,7 @@ export class ExplorerPage {
   }
 
 
-  private loadItems(): void {
+  private loadItems(keepSelection = false): void {
     const filters = this.searchFilters();
 
     if (filters && (filters.q || filters.type || filters.ext)) {
@@ -1019,7 +1084,14 @@ export class ExplorerPage {
             const sortedItems = this.sortItemsForDisplay(result.data.items);
             this.items.set(sortedItems);
             this.loadThumbnails(sortedItems);
-            this.selectedPaths.set([]);
+
+            if (!keepSelection) {
+              this.selectedPaths.set([]);
+            } else {
+              const currentItems = new Set(sortedItems.map((i) => i.path));
+              this.selectedPaths.update((selected) => selected.filter((p) => currentItems.has(p)));
+            }
+
             this.totalPages.set(result.meta?.total_pages ?? 1);
             this.totalItems.set(result.meta?.total ?? result.data.items.length);
           },
@@ -1038,7 +1110,14 @@ export class ExplorerPage {
           const sortedItems = this.sortItemsForDisplay(result.data.items);
           this.items.set(sortedItems);
           this.loadThumbnails(sortedItems);
-          this.selectedPaths.set([]);
+
+          if (!keepSelection) {
+            this.selectedPaths.set([]);
+          } else {
+            const currentItems = new Set(result.data.items.map((i) => i.path));
+            this.selectedPaths.update((selected) => selected.filter((p) => currentItems.has(p)));
+          }
+
           this.totalPages.set(result.meta?.total_pages ?? 1);
           this.totalItems.set(result.meta?.total ?? result.data.items.length);
         },

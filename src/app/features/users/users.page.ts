@@ -7,13 +7,14 @@ import { UsersApiService } from '../../core/api/users-api.service';
 import { AuthStoreService } from '../../core/auth/auth-store.service';
 import { ErrorStoreService } from '../../core/errors/error-store.service';
 import { AuthUser, UserRole } from '../../core/models/api.models';
+import { UserModalComponent, CreateUserPayload } from './components/user-modal.component';
 
 type SortColumn = 'username' | 'role' | 'id';
 type SortDirection = 'asc' | 'desc';
 
 @Component({
   selector: 'app-users-page',
-  imports: [ReactiveFormsModule, CommonModule, FormsModule],
+  imports: [ReactiveFormsModule, CommonModule, FormsModule, UserModalComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <section class="space-y-6 p-4 md:p-6 max-w-7xl mx-auto">
@@ -51,7 +52,7 @@ type SortDirection = 'asc' | 'desc';
           <button
             type="button"
             class="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-violet-600 text-white hover:bg-violet-500 transition-all font-medium text-sm shadow-lg shadow-violet-900/20"
-            (click)="toggleRegisterUserForm()"
+            (click)="isUserModalOpen.set(true)"
           >
             <i class="fa-solid fa-user-plus"></i>
             <span>New User</span>
@@ -60,89 +61,9 @@ type SortDirection = 'asc' | 'desc';
       </header>
 
       <!-- Forms Area (Grid Layout) -->
-      @if (showRegisterForm() || showPasswordForm()) {
+      @if (showPasswordForm()) {
         <div class="grid gap-6 lg:grid-cols-2">
           
-          <!-- Create New User Form -->
-          @if (showRegisterForm()) {
-            <section class="bg-zinc-900/40 backdrop-blur-xl border border-white/5 rounded-2xl overflow-hidden shadow-xl">
-              <div class="px-5 py-4 border-b border-white/5 flex items-center justify-between bg-white/2">
-                <h2 class="font-semibold text-zinc-100 flex items-center gap-2">
-                  <span class="flex items-center justify-center w-8 h-8 rounded-lg bg-violet-500/10 text-violet-400">
-                    <i class="fa-solid fa-user-plus text-sm"></i>
-                  </span>
-                  Create New User
-                </h2>
-                <button type="button" class="text-zinc-500 hover:text-zinc-300 transition-colors" (click)="toggleRegisterUserForm()">
-                  <i class="fa-solid fa-xmark text-lg"></i>
-                </button>
-              </div>
-              
-              <div class="p-5">
-                <form class="space-y-4" [formGroup]="registerForm" (ngSubmit)="submitRegisterUser()">
-                  <div class="grid gap-4 sm:grid-cols-2">
-                    <div class="space-y-1.5">
-                      <label class="text-xs font-medium text-zinc-400 ml-1">Username</label>
-                      <input
-                        type="text"
-                        formControlName="username"
-                        placeholder="jdoe"
-                        class="w-full px-3 py-2 bg-black/20 border border-white/10 rounded-lg text-sm text-zinc-200 focus:border-violet-500 focus:ring-1 focus:ring-violet-500 focus:outline-none transition-all"
-                      />
-                    </div>
-                    
-                    <div class="space-y-1.5">
-                      <label class="text-xs font-medium text-zinc-400 ml-1">Password</label>
-                      <input
-                        type="password"
-                        formControlName="password"
-                        placeholder="••••••••"
-                        class="w-full px-3 py-2 bg-black/20 border border-white/10 rounded-lg text-sm text-zinc-200 focus:border-violet-500 focus:ring-1 focus:ring-violet-500 focus:outline-none transition-all"
-                      />
-                    </div>
-                  </div>
-
-                  <div class="space-y-1.5">
-                    <label class="text-xs font-medium text-zinc-400 ml-1">Role</label>
-                    <div class="grid grid-cols-3 gap-2">
-                      <label class="cursor-pointer relative">
-                        <input type="radio" formControlName="role" value="viewer" class="peer sr-only">
-                        <div class="text-center py-2 rounded-lg border border-white/10 bg-black/20 text-zinc-400 text-sm peer-checked:bg-violet-600/20 peer-checked:text-violet-300 peer-checked:border-violet-500/50 hover:bg-white/5 transition-all">
-                          Viewer
-                        </div>
-                      </label>
-                      <label class="cursor-pointer relative">
-                        <input type="radio" formControlName="role" value="editor" class="peer sr-only">
-                        <div class="text-center py-2 rounded-lg border border-white/10 bg-black/20 text-zinc-400 text-sm peer-checked:bg-blue-600/20 peer-checked:text-blue-300 peer-checked:border-blue-500/50 hover:bg-white/5 transition-all">
-                          Editor
-                        </div>
-                      </label>
-                      <label class="cursor-pointer relative">
-                        <input type="radio" formControlName="role" value="admin" class="peer sr-only">
-                        <div class="text-center py-2 rounded-lg border border-white/10 bg-black/20 text-zinc-400 text-sm peer-checked:bg-emerald-600/20 peer-checked:text-emerald-300 peer-checked:border-emerald-500/50 hover:bg-white/5 transition-all">
-                          Admin
-                        </div>
-                      </label>
-                    </div>
-                  </div>
-
-                  <div class="pt-2 flex justify-end">
-                    <button
-                      type="submit"
-                      class="px-4 py-2 bg-violet-600 hover:bg-violet-500 text-white text-sm font-medium rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
-                      [disabled]="registerForm.invalid || registeringUser()"
-                    >
-                      @if (registeringUser()) {
-                        <i class="fa-solid fa-circle-notch fa-spin text-xs"></i>
-                      }
-                      {{ registeringUser() ? 'Creating...' : 'Create User' }}
-                    </button>
-                  </div>
-                </form>
-              </div>
-            </section>
-          }
-
           <!-- Change Password Form -->
           @if (showPasswordForm()) {
             <section class="bg-zinc-900/40 backdrop-blur-xl border border-white/5 rounded-2xl overflow-hidden shadow-xl">
@@ -420,6 +341,13 @@ type SortDirection = 'asc' | 'desc';
           </button>
         </div>
       </section>
+
+      <app-user-modal
+        [open]="isUserModalOpen()"
+        [loading]="registeringUser()"
+        (confirm)="createUser($event)"
+        (cancel)="isUserModalOpen.set(false)"
+      />
     </section>
   `,
   styles: [`
@@ -454,9 +382,9 @@ export class UsersPage {
   readonly savingUserId = signal<string | null>(null);
   readonly deletingUserId = signal<string | null>(null);
   readonly changingPassword = signal(false);
-  readonly showRegisterForm = signal(false);
   readonly showPasswordForm = signal(false);
   readonly registeringUser = signal(false);
+  readonly isUserModalOpen = signal(false);
 
   readonly currentUserId = computed(() => this.authStore.user()?.id ?? '');
 
@@ -504,12 +432,6 @@ export class UsersPage {
   readonly passwordForm = this.fb.nonNullable.group({
     currentPassword: ['', Validators.required],
     newPassword: ['', [Validators.required, Validators.minLength(4)]],
-  });
-
-  readonly registerForm = this.fb.nonNullable.group({
-    username: ['', Validators.required],
-    password: ['', Validators.required],
-    role: this.fb.nonNullable.control<'viewer' | 'editor' | 'admin'>('viewer', Validators.required),
   });
 
   constructor() {
@@ -622,33 +544,16 @@ export class UsersPage {
     });
   }
 
-  toggleRegisterUserForm(): void {
-    this.showRegisterForm.update((current) => !current);
-    if (this.showRegisterForm()) {
-      this.showPasswordForm.set(false);
-    }
-  }
-  
   togglePasswordForm(): void {
     this.showPasswordForm.update((current) => !current);
-    if (this.showPasswordForm()) {
-      this.showRegisterForm.set(false);
-    }
   }
 
-  submitRegisterUser(): void {
-    if (this.registerForm.invalid) {
-      this.feedback.warning('REGISTER', 'Please fill in all fields correctly.');
-      return;
-    }
-
+  createUser(payload: CreateUserPayload): void {
     this.registeringUser.set(true);
-    const payload = this.registerForm.getRawValue();
     this.authApi.register(payload).subscribe({
       next: () => {
         this.feedback.success('REGISTER', `User ${payload.username} created with role ${payload.role}.`);
-        this.registerForm.reset({ username: '', password: '', role: 'viewer' });
-        this.showRegisterForm.set(false);
+        this.isUserModalOpen.set(false);
         this.registeringUser.set(false);
         this.loadUsers();
       },

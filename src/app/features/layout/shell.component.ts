@@ -1,9 +1,10 @@
-import { ChangeDetectionStrategy, Component, effect, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, effect, inject, signal, OnInit, OnDestroy } from '@angular/core';
 import { Router, RouterOutlet } from '@angular/router';
 
 import { AuthApiService } from '../../core/api/auth-api.service';
 import { SystemApiService } from '../../core/api/system-api.service';
 import { AuthStoreService } from '../../core/auth/auth-store.service';
+import { WebSocketService } from '../../core/websocket/websocket.service';
 import { UploadProgressPanelComponent } from '../../shared/components/upload-progress-panel.component';
 import { HeaderComponent } from './components/header/header.component';
 import { MobileMenuComponent } from './components/mobile-menu/mobile-menu.component';
@@ -63,10 +64,11 @@ import { SidebarComponent } from './components/sidebar/sidebar.component';
     </div>
   `,
 })
-export class ShellComponent {
+export class ShellComponent implements OnInit, OnDestroy {
   private readonly authStore = inject(AuthStoreService);
   private readonly authApi = inject(AuthApiService);
   private readonly systemApi = inject(SystemApiService);
+  private readonly wsService = inject(WebSocketService);
   private readonly router = inject(Router);
 
   readonly healthStatus = signal('API: ...');
@@ -77,6 +79,15 @@ export class ShellComponent {
     // Lock body scroll when mobile menu is open
     effect(() => {
       document.body.style.overflow = this.mobileMenuOpen() ? 'hidden' : '';
+    });
+
+    // Auto-connect WS when authenticated
+    effect(() => {
+      if (this.authStore.isAuthenticated) {
+        this.wsService.connect();
+      } else {
+        this.wsService.disconnect();
+      }
     });
 
     this.authApi.me().subscribe({
@@ -117,5 +128,13 @@ export class ShellComponent {
 
   toggleSidebar(): void {
     this.sidebarCollapsed.update((v) => !v);
+  }
+
+  ngOnInit() {
+    // Initial connection check is handled by the effect in constructor
+  }
+
+  ngOnDestroy() {
+    this.wsService.disconnect();
   }
 }

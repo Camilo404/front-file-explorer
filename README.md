@@ -7,6 +7,7 @@ A modern, high-performance file management application built with **Angular 21+*
 ### 📂 File Management (Explorer)
 - **Browse & Navigate**: Intuitive file browser with support for both List and Grid views.
 - **Advanced Operations**: Create folders, rename, delete, move, and copy files/directories.
+- **Compression**: Compress multiple files/folders into ZIP archives and extract existing ZIP files.
 - **Context Menu**: Right-click context menu for quick actions on files and folders.
 - **Drag & Drop**: Seamless file upload and organization (implied capability for modern explorers).
 - **Breadcrumbs**: Easy navigation through directory hierarchy.
@@ -31,6 +32,9 @@ A modern, high-performance file management application built with **Angular 21+*
 - **Storage Management**: Monitor and manage storage quotas.
 - **Background Jobs**: Monitor long-running tasks and system processes.
 
+### ⚡ Real-time Updates
+- **WebSockets**: Real-time file system updates (upload, move, delete) and background job progress tracking without page refreshes.
+
 ## 💻 Tech Stack
 
 - **Framework**: [Angular 21+](https://angular.dev/)
@@ -38,6 +42,7 @@ A modern, high-performance file management application built with **Angular 21+*
 - **Styling**: [TailwindCSS 4](https://tailwindcss.com/) for utility-first styling.
 - **Icons**: FontAwesome 6.
 - **State Management**: Angular Signals & RxJS.
+- **Real-time**: WebSocket (RxJS WebSocketSubject).
 - **Testing**: [Vitest](https://vitest.dev/) for unit testing.
 - **Build Tool**: Angular CLI (Vite-based).
 
@@ -50,6 +55,7 @@ src/app/
 ├── core/           # Singleton services, guards, interceptors, and global models
 │   ├── api/        # HTTP services for API communication
 │   ├── auth/       # Authentication logic and state
+│   ├── websocket/  # Real-time communication service
 │   ├── guards/     # Route guards (Auth, Role, etc.)
 │   ├── http/       # HTTP interceptors and tokens
 │   └── ...
@@ -61,6 +67,22 @@ src/app/
 ├── shared/         # Reusable components, pipes, and directives
 └── ...
 ```
+
+## ⚙️ Configuration
+
+### Environment Variables
+
+Configure the API and WebSocket URLs in `src/environments/environment.ts`:
+
+```typescript
+export const environment = {
+  production: false,
+  apiBaseUrl: 'http://localhost:8080',
+  wsUrl: 'ws://localhost:8080/api/v1/ws',
+};
+```
+
+For production, update `src/environments/environment.production.ts`.
 
 ## 🛠️ Getting Started
 

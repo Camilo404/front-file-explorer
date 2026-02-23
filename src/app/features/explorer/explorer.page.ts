@@ -835,7 +835,7 @@ export class ExplorerPage {
 
     this.sharesApi.create(payload).subscribe({
       next: (share) => {
-        const publicUrl = `${this.apiBaseUrl}${this.sharesApi.getPublicDownloadUrl(share.token)}`;
+        const publicUrl = this.sharesApi.getAbsolutePublicDownloadUrl(share.token);
         navigator.clipboard.writeText(publicUrl).then(
           () => this.feedback.success('SHARE', `Enlace copiado al portapapeles para: ${target}`),
           () => this.feedback.success('SHARE', `Compartido: ${publicUrl}`)

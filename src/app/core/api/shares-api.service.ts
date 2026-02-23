@@ -1,7 +1,9 @@
+import { DOCUMENT } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { map, Observable } from 'rxjs';
 
+import { API_BASE_URL } from '../http/api-base-url.token';
 import { ApiResponse, ShareListData, ShareRecord } from '../models/api.models';
 
 export interface CreateShareRequest {
@@ -13,6 +15,8 @@ export interface CreateShareRequest {
 export class SharesApiService {
   private readonly http = inject(HttpClient);
   private readonly baseUrl = '/api/v1/shares';
+  private readonly apiBaseUrl = inject(API_BASE_URL);
+  private readonly document = inject(DOCUMENT);
 
   create(payload: CreateShareRequest): Observable<ShareRecord> {
     return this.http
@@ -34,5 +38,16 @@ export class SharesApiService {
 
   getPublicDownloadUrl(token: string): string {
     return `/api/v1/public/shares/${encodeURIComponent(token)}`;
+  }
+
+  getAbsolutePublicDownloadUrl(token: string): string {
+    let baseUrl = this.apiBaseUrl;
+    // Remove trailing slash if present to avoid double slashes
+    baseUrl = baseUrl.replace(/\/$/, '');
+    
+    if (!baseUrl.startsWith('http')) {
+      baseUrl = this.document.location.origin + baseUrl;
+    }
+    return `${baseUrl}${this.getPublicDownloadUrl(token)}`;
   }
 }

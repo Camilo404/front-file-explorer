@@ -296,7 +296,7 @@ export class SharesPage {
   }
 
   copyLink(share: ShareRecord): void {
-    const url = `${this.apiBaseUrl}${this.sharesApi.getPublicDownloadUrl(share.token)}`;
+    const url = this.sharesApi.getAbsolutePublicDownloadUrl(share.token);
     navigator.clipboard.writeText(url).then(
       () => this.feedback.success('SHARE', 'Public link copied to clipboard!'),
       () => this.feedback.warning('SHARE', 'Could not copy link to clipboard.')

@@ -111,6 +111,7 @@ interface ActiveModalConfig {
             (loadChildren)="loadTreeChildren($event)"
             (expandedPathsChange)="onExpandedPathsChange($event)"
             (close)="isMobileTreeOpen.set(false)"
+            (moveItems)="handleMoveItems($event)"
           />
         </div>
 

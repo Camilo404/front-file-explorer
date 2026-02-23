@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, input, output, signal } from '@angular/core';
 
 import { TreeNode } from '../../../core/models/api.models';
 import { isDirectoryType } from '../../../shared/utils/file-item.utils';
@@ -41,8 +41,15 @@ interface TreeRow {
             [class.bg-violet-500/20]="currentPath() === '/'"
             [class.text-violet-200]="currentPath() === '/'"
             [class.text-zinc-400]="currentPath() !== '/'"
+            [class.ring-2]="dragOverPath() === '/'"
+            [class.ring-inset]="dragOverPath() === '/'"
+            [class.ring-violet-400]="dragOverPath() === '/'"
+            [class.bg-violet-500/15]="dragOverPath() === '/'"
             aria-label="Ir a la raíz"
             (click)="selectPath.emit('/')"
+            (dragover)="onDragOver($event, { path: '/', name: 'Root', type: 'directory', has_children: true, modified_at: '', item_count: 0 })"
+            (dragleave)="onDragLeave($event, { path: '/', name: 'Root', type: 'directory', has_children: true, modified_at: '', item_count: 0 })"
+            (drop)="onDrop($event, { path: '/', name: 'Root', type: 'directory', has_children: true, modified_at: '', item_count: 0 })"
           >
             <i class="fa-solid fa-hard-drive shrink-0 transition-colors" [class.text-violet-400]="currentPath() === '/'" [class.text-zinc-500]="currentPath() !== '/'"></i>
             <span class="truncate font-medium transition-colors group-hover:text-zinc-200">Root</span>
@@ -64,6 +71,13 @@ interface TreeRow {
                   class="group relative flex items-center rounded-xl transition-colors hover:bg-white/5" 
                   [class.bg-violet-500/20]="currentPath() === row.node.path"
                   [style.padding-left.px]="row.level * 16 + 8"
+                  [class.ring-2]="dragOverPath() === row.node.path"
+                  [class.ring-inset]="dragOverPath() === row.node.path"
+                  [class.ring-violet-400]="dragOverPath() === row.node.path"
+                  [class.bg-violet-500/15]="dragOverPath() === row.node.path"
+                  (dragover)="onDragOver($event, row.node)"
+                  (dragleave)="onDragLeave($event, row.node)"
+                  (drop)="onDrop($event, row.node)"
                 >
                   <div class="flex h-8 w-6 shrink-0 items-center justify-center">
                     @if (isLoading(row.node.path)) {
@@ -120,6 +134,9 @@ export class TreePanelComponent {
   readonly loadChildren = output<string>();
   readonly expandedPathsChange = output<string[]>();
   readonly close = output<void>();
+  readonly moveItems = output<{ sources: string[]; destination: string }>();
+
+  readonly dragOverPath = signal<string | null>(null);
 
   readonly visibleRows = computed<TreeRow[]>(() => {
     const rows: TreeRow[] = [];
@@ -181,5 +198,52 @@ export class TreePanelComponent {
     if (!isOpen && node.has_children && (!node.children || node.children.length === 0)) {
       this.loadChildren.emit(path);
     }
+  }
+
+  // -- Drag & Drop -----------------------------------------------------------
+  onDragOver(event: DragEvent, node: TreeNode): void {
+    if (!this.isDirectory(node.type)) return;
+    // Do not allow dropping on itself is hard to check here because we don't have source paths easily
+    // We rely on visual feedback and drop validation.
+    
+    event.preventDefault();
+    event.stopPropagation();
+    if (event.dataTransfer) {
+      event.dataTransfer.dropEffect = 'move';
+    }
+    this.dragOverPath.set(node.path);
+  }
+
+  onDragLeave(event: DragEvent, node: TreeNode): void {
+    if (!this.isDirectory(node.type)) return;
+    
+    const related = event.relatedTarget as HTMLElement | null;
+    const current = event.currentTarget as HTMLElement;
+    
+    // Only clear if we are leaving the element entirely (not entering a child element)
+    if (!related || !current.contains(related)) {
+      if (this.dragOverPath() === node.path) {
+        this.dragOverPath.set(null);
+      }
+    }
+  }
+
+  onDrop(event: DragEvent, node: TreeNode): void {
+    event.preventDefault();
+    event.stopPropagation();
+    this.dragOverPath.set(null);
+
+    if (!this.isDirectory(node.type)) return;
+
+    const data = event.dataTransfer?.getData('text/plain');
+    if (!data) return;
+
+    const sources = data.split('\n').filter(p => !!p);
+    if (sources.length === 0) return;
+
+    // Prevent dropping into itself
+    if (sources.includes(node.path)) return;
+
+    this.moveItems.emit({ sources, destination: node.path });
   }
 }

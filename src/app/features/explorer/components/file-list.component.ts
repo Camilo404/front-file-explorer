@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, input, output, signal } from '@angular/core';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, ElementRef, ViewChild, computed, inject, input, output, signal } from '@angular/core';
 
 import { FileItem } from '../../../core/models/api.models';
 import { isDirectory, isImage, isVideo, isMedia, getFileIconClass, getFileIconColorClass } from '../../../shared/utils/file-item.utils';
@@ -26,8 +26,8 @@ import { formatDateTime } from '../../../shared/utils/date.utils';
             aria-hidden="true"
           >
             <i class="fa-solid fa-cloud-arrow-up text-4xl text-violet-400"></i>
-            <p class="text-xl font-bold text-violet-300">Suelta para subir archivos</p>
-            <p class="mt-1 text-sm font-medium text-zinc-400">Se subirán a la carpeta actual</p>
+            <p class="text-xl font-bold text-violet-300">Drop to upload files</p>
+            <p class="mt-1 text-sm font-medium text-zinc-400">They will be uploaded to the current folder</p>
           </div>
         }
 
@@ -35,7 +35,7 @@ import { formatDateTime } from '../../../shared/utils/date.utils';
           <div class="flex flex-wrap items-center gap-3">
             <i class="fa-solid fa-table-list text-violet-400"></i>
             <h2 class="text-sm font-bold tracking-wide text-zinc-100">
-              {{ isSearchMode() ? 'Resultados de búsqueda' : 'Contenido' }}
+              {{ isSearchMode() ? 'Search results' : 'Content' }}
             </h2>
             <span class="rounded-lg bg-white/5 px-2.5 py-1 text-xs font-semibold text-zinc-300 ring-1 ring-white/10">
               {{ totalItems() }} items
@@ -48,14 +48,14 @@ import { formatDateTime } from '../../../shared/utils/date.utils';
             @if (isDragging()) {
               <span class="hidden rounded-lg bg-amber-500/15 px-2.5 py-1 text-xs font-semibold text-amber-300 ring-1 ring-amber-500/30 sm:inline-flex sm:items-center">
                 <i class="fa-solid fa-hand-pointer mr-1"></i>
-                Arrastrando {{ dragCount() }} {{ dragCount() === 1 ? 'elemento' : 'elementos' }}
+                Dragging {{ dragCount() }} {{ dragCount() === 1 ? 'item' : 'items' }}
               </span>
             }
           </div>
 
           <div class="flex items-center gap-3">
             <span class="hidden text-xs font-medium text-zinc-400 sm:inline">
-              Página {{ page() }} de {{ totalPages() }}
+              Page {{ page() }} of {{ totalPages() }}
             </span>
             <div class="flex gap-1.5">
               <button
@@ -63,7 +63,7 @@ import { formatDateTime } from '../../../shared/utils/date.utils';
                 class="flex size-8 items-center justify-center rounded-xl bg-white/5 text-zinc-300 transition-all hover:bg-white/10 hover:text-white hover:shadow-md disabled:opacity-40 disabled:hover:bg-white/5 disabled:hover:text-zinc-300 disabled:hover:shadow-none"
                 [disabled]="page() <= 1"
                 (click)="changePage.emit(-1)"
-                aria-label="Página anterior"
+                aria-label="Previous page"
               >
                 <i class="fa-solid fa-chevron-left text-xs"></i>
               </button>
@@ -72,7 +72,7 @@ import { formatDateTime } from '../../../shared/utils/date.utils';
                 class="flex size-8 items-center justify-center rounded-xl bg-white/5 text-zinc-300 transition-all hover:bg-white/10 hover:text-white hover:shadow-md disabled:opacity-40 disabled:hover:bg-white/5 disabled:hover:text-zinc-300 disabled:hover:shadow-none"
                 [disabled]="page() >= totalPages()"
                 (click)="changePage.emit(1)"
-                aria-label="Página siguiente"
+                aria-label="Next page"
               >
                 <i class="fa-solid fa-chevron-right text-xs"></i>
               </button>
@@ -99,12 +99,12 @@ import { formatDateTime } from '../../../shared/utils/date.utils';
             </colgroup>
             <thead class="sticky top-0 z-10 bg-zinc-900/95 backdrop-blur-md">
               <tr class="border-b border-white/5 text-xs font-medium text-zinc-400">
-                <th class="px-2 py-3 sm:px-4" aria-label="Selección"></th>
-                <th class="px-2 py-3 sm:px-4">Nombre</th>
-                <th class="hidden px-4 py-3 sm:table-cell">Tamaño</th>
-                <th class="hidden px-4 py-3 md:table-cell">Modificado</th>
-                <th class="hidden px-4 py-3 lg:table-cell">Creado</th>
-                <th class="px-2 py-3 text-center sm:px-4 pr-6 sm:pr-8">Acciones</th>
+                <th class="px-2 py-3 sm:px-4" aria-label="Selection"></th>
+                <th class="px-2 py-3 sm:px-4">Name</th>
+                <th class="hidden px-4 py-3 sm:table-cell">Size</th>
+                <th class="hidden px-4 py-3 md:table-cell">Modified</th>
+                <th class="hidden px-4 py-3 lg:table-cell">Created</th>
+                <th class="px-2 py-3 text-center sm:px-4 pr-6 sm:pr-8">Actions</th>
               </tr>
             </thead>
             <tbody class="divide-y divide-white/5">
@@ -118,7 +118,7 @@ import { formatDateTime } from '../../../shared/utils/date.utils';
                   [class.ring-violet-400]="dragOverParent()"
                   [class.bg-violet-500/10]="dragOverParent()"
                   tabindex="0"
-                  aria-label="Carpeta superior"
+                  aria-label="Parent folder"
                   (dblclick)="navigateToParent.emit()"
                   (keydown.enter)="navigateToParent.emit()"
                   (dragover)="onDragOverParent($event)"
@@ -146,7 +146,7 @@ import { formatDateTime } from '../../../shared/utils/date.utils';
                   <td colspan="6">
                     <div class="flex flex-col items-center justify-center p-8 text-center opacity-50">
                       <i class="fa-solid fa-folder-open mb-3 text-5xl text-zinc-400"></i>
-                      <p class="mt-1 text-sm font-medium text-zinc-400">No hay elementos para mostrar en esta carpeta.</p>
+                      <p class="mt-1 text-sm font-medium text-zinc-400">No items to show in this folder.</p>
                     </div>
                   </td>
                 </tr>
@@ -156,7 +156,7 @@ import { formatDateTime } from '../../../shared/utils/date.utils';
                 <tr>
                   <td colspan="6">
                     <div class="flex flex-col items-center justify-center p-6 text-center opacity-50">
-                      <p class="mt-1 text-sm font-medium text-zinc-400">La carpeta está vacía.</p>
+                      <p class="mt-1 text-sm font-medium text-zinc-400">The folder is empty.</p>
                     </div>
                   </td>
                 </tr>
@@ -198,7 +198,7 @@ import { formatDateTime } from '../../../shared/utils/date.utils';
                         [checked]="isSelected(item.path)"
                         (click)="$event.stopPropagation()"
                         (change)="onCheckboxChange(item)"
-                        [attr.aria-label]="'Seleccionar ' + item.name"
+                        [attr.aria-label]="'Select ' + item.name"
                       />
                     </div>
                   </td>
@@ -238,8 +238,8 @@ import { formatDateTime } from '../../../shared/utils/date.utils';
                         type="button"
                         class="inline-flex size-7 items-center justify-center rounded-lg text-zinc-400 transition-all hover:bg-white/10 hover:text-white"
                         (click)="$event.stopPropagation(); onContextMenuButton($event, item)"
-                        aria-label="Más opciones"
-                        title="Más opciones"
+                        aria-label="More options"
+                        title="More options"
                       >
                         <i class="fa-solid fa-ellipsis-vertical text-xs"></i>
                       </button>
@@ -247,8 +247,8 @@ import { formatDateTime } from '../../../shared/utils/date.utils';
                         type="button"
                         class="hidden size-7 items-center justify-center rounded-lg text-zinc-400 transition-all hover:bg-white/10 hover:text-white sm:inline-flex"
                         (click)="$event.stopPropagation(); info.emit(item.path)"
-                        aria-label="Información"
-                        title="Información"
+                        aria-label="Information"
+                        title="Information"
                       >
                         <i class="fa-solid fa-circle-info text-xs"></i>
                       </button>
@@ -270,7 +270,7 @@ import { formatDateTime } from '../../../shared/utils/date.utils';
                 [class.ring-violet-400]="dragOverParent()"
                 [class.bg-violet-500/10]="dragOverParent()"
                 tabindex="0"
-                aria-label="Carpeta superior"
+                aria-label="Parent folder"
                 (dblclick)="navigateToParent.emit()"
                 (keydown.enter)="navigateToParent.emit()"
                 (dragover)="onDragOverParent($event)"
@@ -287,13 +287,13 @@ import { formatDateTime } from '../../../shared/utils/date.utils';
             @if (items().length === 0 && !showParentRow()) {
               <div class="col-span-full flex flex-col items-center justify-center p-8 text-center opacity-50">
                 <i class="fa-solid fa-folder-open mb-3 text-5xl text-zinc-400"></i>
-                <p class="mt-1 text-sm font-medium text-zinc-400">No hay elementos para mostrar en esta carpeta.</p>
+                <p class="mt-1 text-sm font-medium text-zinc-400">No items to show in this folder.</p>
               </div>
             }
 
             @if (items().length === 0 && showParentRow()) {
               <div class="col-span-full flex flex-col items-center justify-center p-6 text-center opacity-50">
-                <p class="mt-1 text-sm font-medium text-zinc-400">La carpeta está vacía.</p>
+                <p class="mt-1 text-sm font-medium text-zinc-400">The folder is empty.</p>
               </div>
             }
 
@@ -333,7 +333,7 @@ import { formatDateTime } from '../../../shared/utils/date.utils';
                     [checked]="isSelected(item.path)"
                     (click)="$event.stopPropagation()"
                     (change)="onCheckboxChange(item)"
-                    [attr.aria-label]="'Seleccionar ' + item.name"
+                    [attr.aria-label]="'Seleccionarionar ' + item.name"
                   />
                 </div>
 
@@ -343,8 +343,8 @@ import { formatDateTime } from '../../../shared/utils/date.utils';
                     type="button"
                     class="flex size-7 items-center justify-center rounded-lg bg-zinc-900/80 text-zinc-400 transition-all hover:bg-zinc-800 hover:text-white"
                     (click)="$event.stopPropagation(); onContextMenuButton($event, item)"
-                    aria-label="Más opciones"
-                    title="Más opciones"
+                    aria-label="Másopcconees"
+                    title="Másopcconees"
                   >
                     <i class="fa-solid fa-ellipsis-vertical text-xs"></i>
                   </button>
@@ -385,6 +385,36 @@ import { formatDateTime } from '../../../shared/utils/date.utils';
           </div>
         }
       </div>
+    <!-- Drag Preview (Hidden off-screen) -->
+    <div
+      #dragPreview
+      class="fixed left-[-9999px] top-[-9999px] z-50 pointer-events-none"
+    >
+      <div class="flex items-center gap-3 rounded-2xl border border-white/20 bg-zinc-900/90 p-3 shadow-2xl backdrop-blur-xl ring-1 ring-white/10">
+        <!-- Stack effect for multiple items -->
+        @if (dragCount() > 1) {
+          <div class="absolute -right-1 -bottom-1 -z-10 h-full w-full rounded-2xl border border-white/10 bg-zinc-800/80"></div>
+          <div class="absolute -right-2 -bottom-2 -z-20 h-full w-full rounded-2xl border border-white/5 bg-zinc-800/60"></div>
+        }
+
+        <div class="flex size-10 shrink-0 items-center justify-center rounded-xl bg-violet-500/20 text-violet-300 shadow-inner">
+           @if (dragCount() > 1) {
+             <span class="text-lg font-bold">{{ dragCount() }}</span>
+           } @else {
+             <i class="fa-solid text-xl" [class]="draggedItemIconClass()"></i>
+           }
+        </div>
+
+        <div class="flex flex-col pr-4">
+          <span class="max-w-[200px] truncate text-sm font-bold text-white shadow-black drop-shadow-md">
+            {{ dragCount() > 1 ? dragCount() + ' items' : draggedItemName() }}
+          </span>
+          <span class="text-xs font-medium text-zinc-300">
+            {{ dragCount() > 1 ? 'Move selection' : draggedItemLabel() }}
+          </span>
+        </div>
+      </div>
+    </div>
     </section>
   `,
   styles: `
@@ -415,6 +445,9 @@ import { formatDateTime } from '../../../shared/utils/date.utils';
   `,
 })
 export class FileListComponent {
+  private readonly cdr = inject(ChangeDetectorRef);
+  @ViewChild('dragPreview') dragPreview!: ElementRef<HTMLElement>;
+
   readonly items = input<FileItem[]>([]);
   readonly selectedPaths = input<string[]>([]);
   readonly thumbnailUrls = input<Record<string, string>>({});
@@ -452,6 +485,29 @@ export class FileListComponent {
 
   readonly isDragging = computed(() => this.dragPaths().length > 0);
   readonly dragCount = computed(() => this.dragPaths().length);
+
+  readonly draggedItem = computed(() => {
+    const paths = this.dragPaths();
+    if (paths.length !== 1) return null;
+    return this.items().find((i) => i.path === paths[0]);
+  });
+
+  readonly draggedItemIconClass = computed(() => {
+    const item = this.draggedItem();
+    if (!item) return 'fa-copy';
+    return `${this.getFileIconClass(item)} ${this.getFileIconColorClass(item)}`;
+  });
+
+  readonly draggedItemName = computed(() => {
+    const item = this.draggedItem();
+    return item ? item.name : '';
+  });
+
+  readonly draggedItemLabel = computed(() => {
+    const item = this.draggedItem();
+    if (!item) return 'Move item';
+    return this.isDirectory(item) ? 'Move folder' : 'Move file';
+  });
 
   readonly showParentRow = computed(
     () => !this.isSearchMode() && !!this.parentPath(),
@@ -595,9 +651,15 @@ export class FileListComponent {
     const paths = selected.includes(item.path) ? selected : [item.path];
     this.dragPaths.set(paths);
 
-    event.dataTransfer?.setData('text/plain', paths.join('\n'));
+    this.cdr.detectChanges();
+
     if (event.dataTransfer) {
+      event.dataTransfer.setData('text/plain', paths.join('\n'));
       event.dataTransfer.effectAllowed = 'move';
+
+      if (this.dragPreview?.nativeElement) {
+        event.dataTransfer.setDragImage(this.dragPreview.nativeElement, 0, 0);
+      }
     }
   }
 

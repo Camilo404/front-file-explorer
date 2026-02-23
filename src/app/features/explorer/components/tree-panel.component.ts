@@ -18,13 +18,13 @@ interface TreeRow {
           <div class="flex size-7 items-center justify-center rounded-lg bg-violet-500/10 text-violet-400 ring-1 ring-inset ring-violet-500/20">
             <i class="fa-solid fa-folder-tree text-xs"></i>
           </div>
-          <h2 class="text-sm font-bold tracking-wide text-zinc-100">Explorador</h2>
+          <h2 class="text-sm font-bold tracking-wide text-zinc-100">Explorer</h2>
         </div>
         @if (closeable()) {
           <button
             type="button"
             class="lg:hidden flex size-7 items-center justify-center rounded-lg text-zinc-400 transition-colors hover:bg-white/10 hover:text-zinc-100"
-            aria-label="Cerrar panel"
+            aria-label="Close panel"
             (click)="close.emit()"
           >
             <i class="fa-solid fa-xmark"></i>
@@ -45,7 +45,7 @@ interface TreeRow {
             [class.ring-inset]="dragOverPath() === '/'"
             [class.ring-violet-400]="dragOverPath() === '/'"
             [class.bg-violet-500/15]="dragOverPath() === '/'"
-            aria-label="Ir a la raíz"
+            aria-label="Go to root"
             (click)="selectPath.emit('/')"
             (dragover)="onDragOver($event, { path: '/', name: 'Root', type: 'directory', has_children: true, modified_at: '', item_count: 0 })"
             (dragleave)="onDragLeave($event, { path: '/', name: 'Root', type: 'directory', has_children: true, modified_at: '', item_count: 0 })"
@@ -61,7 +61,7 @@ interface TreeRow {
             <div class="mb-3 flex size-12 items-center justify-center rounded-full bg-zinc-800/50">
               <i class="fa-solid fa-folder-open text-xl text-zinc-600"></i>
             </div>
-            <p class="text-sm font-medium text-zinc-500">Sin directorios</p>
+            <p class="text-sm font-medium text-zinc-500">No directories</p>
           </div>
         } @else {
           <ul class="space-y-0.5 text-sm">

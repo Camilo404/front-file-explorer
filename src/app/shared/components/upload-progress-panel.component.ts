@@ -54,7 +54,7 @@ import { UploadTrackerService } from '../../core/uploads/upload-tracker.service'
               </span>
               @if (tracker.isUploading()) {
                 <span class="text-[10px] text-zinc-400 font-medium">
-                  {{ tracker.overallProgress() }}% completado
+                  {{ tracker.overallProgress() }}% completed
                 </span>
               }
             </div>
@@ -134,7 +134,7 @@ import { UploadTrackerService } from '../../core/uploads/upload-tracker.service'
                       @if (entry.status === 'uploading' && entry.speed) {
                         <div class="flex items-center justify-between text-[10px] font-medium text-zinc-500 tabular-nums">
                           <span class="text-zinc-400">{{ formatSpeed(entry.speed) }}</span>
-                          <span>{{ formatTime(entry.remainingTime) }} restantes</span>
+                          <span>{{ formatTime(entry.remainingTime) }} remaining</span>
                         </div>
                       }
                     </div>
@@ -158,7 +158,7 @@ import { UploadTrackerService } from '../../core/uploads/upload-tracker.service'
                 class="rounded-lg bg-white/5 px-4 py-1.5 text-xs font-medium text-zinc-300 ring-1 ring-white/10 transition-all hover:bg-white/10 hover:text-white hover:ring-white/20 active:scale-95"
                 (click)="tracker.clearAll()"
               >
-                Cerrar
+                Close
               </button>
             </div>
           }
@@ -175,16 +175,16 @@ export class UploadProgressPanelComponent {
     if (this.tracker.isUploading()) {
       const total = this.tracker.totalCount();
       const completed = this.tracker.completedCount();
-      return `Subiendo ${total - completed} de ${total} archivo${total > 1 ? 's' : ''}…`;
+      return `Uploading ${total - completed} of ${total} file${total > 1 ? 's' : ''}…`;
     }
 
     const errors = this.tracker.entries().filter((e) => e.status === 'error').length;
     if (errors > 0) {
-      return `${this.tracker.completedCount()} subido${this.tracker.completedCount() > 1 ? 's' : ''}, ${errors} fallido${errors > 1 ? 's' : ''}`;
+      return `${this.tracker.completedCount()} uploaded, ${errors} failed`;
     }
 
     const count = this.tracker.completedCount();
-    return `${count} archivo${count > 1 ? 's' : ''} subido${count > 1 ? 's' : ''}`;
+    return `${count} file${count > 1 ? 's' : ''} uploaded`;
   });
 
   protected formatSize(bytes: number): string {

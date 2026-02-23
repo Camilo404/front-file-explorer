@@ -68,7 +68,7 @@ import { ErrorStoreService } from '../../core/errors/error-store.service';
                 type="button"
                 class="shrink-0 -mr-1 -mt-1 rounded-lg p-1.5 text-zinc-500 transition-colors hover:bg-white/10 hover:text-zinc-200 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-white/10"
                 (click)="errorStore.dismiss(alert.id)"
-                aria-label="Cerrar notificación"
+                aria-label="Close notification"
               >
                 <i class="fa-solid fa-xmark text-sm"></i>
               </button>

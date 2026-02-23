@@ -60,7 +60,7 @@ import { ChangeDetectionStrategy, Component, ElementRef, effect, input, output, 
                   type="button"
                   class="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-zinc-300 focus:outline-none"
                   (click)="inputValue.set(''); inputEl.focus()"
-                  aria-label="Limpiar campo"
+                  aria-label="Clear field"
                 >
                   <i class="fa-solid fa-circle-xmark"></i>
                 </button>
@@ -74,7 +74,7 @@ import { ChangeDetectionStrategy, Component, ElementRef, effect, input, output, 
                 class="rounded-xl px-4 py-2.5 text-sm font-medium text-zinc-400 transition-all hover:bg-white/5 hover:text-zinc-200 active:scale-95"
                 (click)="cancel.emit()"
               >
-                Cancelar
+                Cancel
               </button>
               <button
                 type="button"
@@ -85,7 +85,7 @@ import { ChangeDetectionStrategy, Component, ElementRef, effect, input, output, 
                   : 'bg-violet-600 hover:bg-violet-500 shadow-violet-500/20 hover:shadow-violet-500/30'"
                 (click)="onConfirm()"
               >
-                <span>{{ confirmLabel() ?? 'Confirmar' }}</span>
+                <span>{{ confirmLabel() ?? 'Confirm' }}</span>
                 @if (inputValue().trim()) {
                   <i class="fa-solid fa-arrow-right text-xs opacity-70"></i>
                 }

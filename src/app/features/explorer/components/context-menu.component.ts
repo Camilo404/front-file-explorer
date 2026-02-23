@@ -37,7 +37,7 @@ export interface ContextMenuEvent {
           </div>
         }
         <div class="px-2 py-1.5 text-xs font-medium text-zinc-400">
-          {{ selectedCount() }} seleccionado{{ selectedCount() !== 1 ? 's' : '' }}
+          {{ selectedCount() }} selected
         </div>
         <div class="my-1 h-px bg-white/10"></div>
         
@@ -48,7 +48,7 @@ export interface ContextMenuEvent {
           (click)="onAction('rename')"
         >
           <i class="fa-solid fa-pen-to-square fa-fw text-zinc-400"></i>
-          Renombrar
+          Rename
         </button>
 
         <button
@@ -58,7 +58,7 @@ export interface ContextMenuEvent {
           (click)="onAction('move')"
         >
           <i class="fa-solid fa-arrow-right-to-bracket fa-fw text-zinc-400"></i>
-          Mover
+          Move
         </button>
 
         <button
@@ -68,7 +68,7 @@ export interface ContextMenuEvent {
           (click)="onAction('copy')"
         >
           <i class="fa-solid fa-copy fa-fw text-zinc-400"></i>
-          Copiar
+          Copy
         </button>
 
         <div class="my-1 h-px bg-white/10"></div>
@@ -80,7 +80,7 @@ export interface ContextMenuEvent {
           (click)="onAction('compress')"
         >
           <i class="fa-solid fa-file-zipper fa-fw text-zinc-400"></i>
-          Comprimir
+          Compress
         </button>
 
         @if (isZipFile()) {
@@ -90,7 +90,7 @@ export interface ContextMenuEvent {
             (click)="onAction('decompress')"
           >
             <i class="fa-solid fa-box-open fa-fw text-zinc-400"></i>
-            Extraer aquí
+            Extract here
           </button>
         }
 
@@ -103,7 +103,7 @@ export interface ContextMenuEvent {
           (click)="onAction('download')"
         >
           <i class="fa-solid fa-download fa-fw text-zinc-400"></i>
-          Descargar
+          Download
         </button>
 
         @if (canShare()) {
@@ -115,8 +115,8 @@ export interface ContextMenuEvent {
               (change)="onShareChange($event)"
               (click)="$event.stopPropagation()"
             >
-              <option value="" disabled selected class="bg-zinc-900 text-zinc-500">Compartir...</option>
-              <option value="24h" class="bg-zinc-900">24 Horas (Default)</option>
+              <option value="" disabled selected class="bg-zinc-900 text-zinc-500">Share...</option>
+              <option value="24h" class="bg-zinc-900">24 Hours (Default)</option>
               @for (opt of durationOptions(); track opt.value) {
                 <option [value]="opt.value" class="bg-zinc-900">{{ opt.label }}</option>
               }
@@ -134,7 +134,7 @@ export interface ContextMenuEvent {
           (click)="onAction('delete')"
         >
           <i class="fa-solid fa-trash-can fa-fw"></i>
-          Eliminar
+          Delete
         </button>
       </div>
     }
@@ -154,9 +154,9 @@ export class ContextMenuComponent {
   readonly close = output<void>();
 
   readonly durationOptions = signal([
-    { label: '1 Hora', value: '1h' },
-    { label: '7 Días', value: '168h' },
-    { label: '30 Días', value: '720h' },
+    { label: '1 Hour', value: '1h' },
+    { label: '7 Days', value: '168h' },
+    { label: '30 Days', value: '720h' },
   ]);
 
   /** True when the viewport is narrower than the sm breakpoint (640 px). */

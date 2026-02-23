@@ -11,7 +11,7 @@ import { SearchApiService } from '../../core/api/search-api.service';
 import { SharesApiService } from '../../core/api/shares-api.service';
 import { AuthStoreService } from '../../core/auth/auth-store.service';
 import { WebSocketService } from '../../core/websocket/websocket.service';
-import { WSEventType, WSFilePayload } from '../../core/websocket/websocket.models';
+import { WSEventType } from '../../core/websocket/websocket.models';
 import { ErrorStoreService } from '../../core/errors/error-store.service';
 import { API_BASE_URL } from '../../core/http/api-base-url.token';
 import { UploadTrackerService } from '../../core/uploads/upload-tracker.service';
@@ -64,7 +64,7 @@ interface ActiveModalConfig {
           <button
             type="button"
             class="lg:hidden flex items-center justify-center size-9 rounded-xl text-zinc-400 transition-all hover:bg-white/10 hover:text-white mr-2"
-            aria-label="Mostrar árbol de directorios"
+            aria-label="Show directory tree"
             (click)="isMobileTreeOpen.set(!isMobileTreeOpen())"
           >
             <i class="fa-solid fa-folder-tree text-violet-400"></i>
@@ -258,7 +258,7 @@ export class ExplorerPage {
   readonly thumbnailUrls = signal<Record<string, string>>({});
   readonly isImageViewerOpen = signal(false);
   readonly viewerImageUrl = signal<string | null>(null);
-  readonly viewerImageName = signal('Imagen');
+  readonly viewerImageName = signal('Image');
   readonly viewerImagePaths = signal<string[]>([]);
   readonly viewerImageIndex = signal(-1);
   readonly isVideoViewerOpen = signal(false);
@@ -476,7 +476,7 @@ export class ExplorerPage {
   goBackFolder(): void {
     const history = this.pathHistory();
     if (history.length === 0) {
-      this.feedback.info('NAVIGATION', 'No hay carpeta anterior en el historial.');
+      this.feedback.info('NAVIGATION', 'No previous folder in history.');
       return;
     }
 
@@ -553,15 +553,15 @@ export class ExplorerPage {
   openCreateDirectoryModal(): void {
     this.openModal(
       {
-        title: 'Nuevo directorio',
-        label: 'Nombre del directorio',
-        placeholder: 'mi-carpeta',
-        confirmLabel: 'Crear',
+        title: 'New directory',
+        label: 'Directory name',
+        placeholder: 'my-folder',
+        confirmLabel: 'Create',
       },
       (name) => {
         this.explorerApi.createDirectory(this.currentPath(), name).subscribe({
           next: () => {
-            this.feedback.success('DIRECTORY_CREATED', `Directorio "${name}" creado.`);
+            this.feedback.success('DIRECTORY_CREATED', `Directory "${name}" created.`);
             this.refresh();
           },
           error: () => {},
@@ -629,7 +629,7 @@ export class ExplorerPage {
             if (!isConflict) {
               this.uploadTracker.markError(entryIds[i], failure.reason);
             } else {
-              this.uploadTracker.markError(entryIds[i], 'Conflicto detectado');
+              this.uploadTracker.markError(entryIds[i], 'Conflict detected');
             }
           } else {
             this.uploadTracker.markDone(entryIds[i]);
@@ -646,7 +646,7 @@ export class ExplorerPage {
         }
       },
       error: () => {
-        this.uploadTracker.markBatchError(entryIds, 'Error de conexión');
+        this.uploadTracker.markBatchError(entryIds, 'Connection error');
       },
     });
   }
@@ -677,7 +677,7 @@ export class ExplorerPage {
           );
           this.uploadTracker.markDone(task.id);
         } catch {
-          this.uploadTracker.markError(task.id, 'Error en subida por fragmentos');
+          this.uploadTracker.markError(task.id, 'Chunked upload error');
         }
       }
     };
@@ -740,10 +740,10 @@ export class ExplorerPage {
     const currentName = target.split('/').pop() ?? '';
     this.openModal(
       {
-        title: 'Renombrar',
-        label: 'Nuevo nombre',
+        title: 'Rename',
+        label: 'New name',
         initialValue: currentName,
-        confirmLabel: 'Renombrar',
+        confirmLabel: 'Rename',
       },
       (newName) => {
         // Preserve extension if the user accidentally removed it
@@ -753,7 +753,7 @@ export class ExplorerPage {
 
         this.operationsApi.rename(target, finalName).subscribe({
           next: () => {
-            this.feedback.success('RENAME', 'Elemento renombrado.');
+            this.feedback.success('RENAME', 'Item renamed.');
             this.refresh();
           },
           error: () => {},
@@ -765,17 +765,17 @@ export class ExplorerPage {
   moveSelected(): void {
     this.openModal(
       {
-        title: 'Mover',
-        label: 'Directorio destino',
-        placeholder: '/carpeta-destino',
-        confirmLabel: 'Mover',
+        title: 'Move',
+        label: 'Destination directory',
+        placeholder: '/destination-folder',
+        confirmLabel: 'Move',
       },
       (destination) => {
         this.operationsApi.move(this.selectedPaths(), destination, 'rename').subscribe({
           next: (response) => {
             this.feedback.success(
               'MOVE',
-              `Move completado: ${response.moved.length} movidos, ${response.failed.length} fallidos.`
+              `Move completed: ${response.moved.length} moved, ${response.failed.length} failed.`
             );
             this.refresh();
           },
@@ -788,17 +788,17 @@ export class ExplorerPage {
   copySelected(): void {
     this.openModal(
       {
-        title: 'Copiar',
-        label: 'Directorio destino',
-        placeholder: '/carpeta-destino',
-        confirmLabel: 'Copiar',
+        title: 'Copy',
+        label: 'Destination directory',
+        placeholder: '/destination-folder',
+        confirmLabel: 'Copy',
       },
       (destination) => {
         this.operationsApi.copy(this.selectedPaths(), destination, 'rename').subscribe({
           next: (response) => {
             this.feedback.success(
               'COPY',
-              `Copy completado: ${response.copied.length} copiados, ${response.failed.length} fallidos.`
+              `Copy completed: ${response.copied.length} copied, ${response.failed.length} failed.`
             );
             this.refresh();
           },
@@ -813,20 +813,20 @@ export class ExplorerPage {
       next: (response) => {
         this.feedback.success(
           'DELETE',
-          `Delete completado: ${response.deleted.length} eliminados, ${response.failed.length} fallidos.`
+          `Delete completed: ${response.deleted.length} deleted, ${response.failed.length} failed.`
         );
         this.refresh();
       },
       error: () => {},
-    });
-  }
+        });
+      }
 
   restoreSelected(): void {
     this.operationsApi.restore(this.selectedPaths()).subscribe({
       next: (response) => {
         this.feedback.success(
           'RESTORE',
-          `Restore completado: ${response.restored.length} restaurados, ${response.failed.length} fallidos.`
+          `Restore completed: ${response.restored.length} restored, ${response.failed.length} failed.`
         );
         this.refresh();
       },
@@ -877,8 +877,8 @@ export class ExplorerPage {
         next: (share) => {
           const publicUrl = this.sharesApi.getAbsolutePublicDownloadUrl(share.token);
           navigator.clipboard.writeText(publicUrl).then(
-            () => this.feedback.success('SHARE', `Enlace copiado al portapapeles para: ${target}`),
-            () => this.feedback.success('SHARE', `Compartido: ${publicUrl}`)
+            () => this.feedback.success('SHARE', `Link copied to clipboard for: ${target}`),
+            () => this.feedback.success('SHARE', `Shared: ${publicUrl}`)
           );
           this.sharingPath.set(null);
         },
@@ -963,11 +963,11 @@ export class ExplorerPage {
     this.operationsApi.move(event.sources, event.destination, 'rename').subscribe({
       next: () => {
         this.selectedPaths.set([]);
-        this.feedback.info('MOVE', `${event.sources.length} elemento(s) movido(s) correctamente.`);
+        this.feedback.info('MOVE', `${event.sources.length} item(s) moved successfully.`);
         this.refresh();
       },
       error: (err: unknown) => {
-        const msg = err instanceof Error ? err.message : 'Error al mover elementos.';
+        const msg = err instanceof Error ? err.message : 'Error moving items.';
         this.feedback.error('MOVE', msg);
       },
     });
@@ -1042,10 +1042,10 @@ export class ExplorerPage {
 
     this.openModal(
       {
-        title: 'Comprimir',
-        label: 'Nombre del archivo ZIP',
-        placeholder: 'archivo.zip',
-        confirmLabel: 'Comprimir',
+        title: 'Compress',
+        label: 'ZIP file name',
+        placeholder: 'file.zip',
+        confirmLabel: 'Compress',
       },
       (name) => {
         let zipName = name;
@@ -1055,11 +1055,12 @@ export class ExplorerPage {
 
         this.operationsApi.compress(paths, this.currentPath(), zipName).subscribe({
           next: (response) => {
-            this.feedback.success('COMPRESS', `Archivo comprimido: ${response.path}`);
+            this.feedback.success('COMPRESS', `Compressed file: ${response.path}`);
             this.refresh();
           },
           error: (err: unknown) => {
-             // El interceptor maneja el error, pero podemos añadir lógica extra si se requiere
+            const msg = err instanceof Error ? err.message : 'Error compressing file.';
+            this.feedback.error('COMPRESS', msg);
           },
         });
       }
@@ -1077,7 +1078,7 @@ export class ExplorerPage {
 
     this.operationsApi.decompress(zipPath, destination).subscribe({
       next: (response) => {
-        this.feedback.success('DECOMPRESS', `Archivos extraídos en: ${response.destination}`);
+        this.feedback.success('DECOMPRESS', `Files extracted in: ${response.destination}`);
         this.refresh();
       },
       error: (err: any) => {
@@ -1088,11 +1089,11 @@ export class ExplorerPage {
           this.pendingModalAction = (policy: string) => {
             this.operationsApi.decompress(zipPath, destination, policy as ConflictPolicy).subscribe({
               next: (response) => {
-                this.feedback.success('DECOMPRESS', `Archivos extraídos con política '${policy}'`);
+                this.feedback.success('DECOMPRESS', `Files extracted with policy '${policy}'`);
                 this.refresh();
               },
               error: (err) => {
-                this.feedback.error('DECOMPRESS', 'Error al descomprimir con conflicto resuelto.');
+                this.feedback.error('DECOMPRESS', 'Error extracting files with resolved conflict.');
               },
             });
           };
@@ -1243,13 +1244,13 @@ export class ExplorerPage {
     const imagePaths = imageItems.map((item) => item.path);
 
     if (imagePaths.length === 0) {
-      this.feedback.warning('VIEWER', 'No hay imágenes en la vista actual.');
+      this.feedback.warning('VIEWER', 'No images in current view.');
       return;
     }
 
     const targetIndex = imagePaths.indexOf(path);
     if (targetIndex === -1) {
-      this.feedback.warning('VIEWER', 'La imagen seleccionada no está disponible en la página actual.');
+      this.feedback.warning('VIEWER', 'Selected image is not available in current page.');
       return;
     }
 
@@ -1282,13 +1283,13 @@ export class ExplorerPage {
     const videoPaths = videoItems.map((item) => item.path);
 
     if (videoPaths.length === 0) {
-      this.feedback.warning('VIEWER', 'No hay videos en la vista actual.');
+      this.feedback.warning('VIEWER', 'No videos in current view.');
       return;
     }
 
     const targetIndex = videoPaths.indexOf(path);
     if (targetIndex === -1) {
-      this.feedback.warning('VIEWER', 'El video seleccionado no está disponible en la página actual.');
+      this.feedback.warning('VIEWER', 'Selected video is not available in current page.');
       return;
     }
 

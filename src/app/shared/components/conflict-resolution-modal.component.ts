@@ -36,13 +36,13 @@ import { ConflictPolicy } from '../../core/api/operations-api.service';
               </div>
               <div class="flex-1">
                 <h2 id="conflict-modal-title" class="text-lg font-bold tracking-tight text-white">
-                  Conflictos detectados
+                  Conflicts detected
                 </h2>
                 <p class="mt-1 text-sm text-zinc-400 leading-relaxed">
                   {{ conflictingNames().length === 1
-                    ? 'Un archivo con el mismo nombre ya existe'
-                    : 'Se encontraron ' + conflictingNames().length + ' archivos con el mismo nombre' }}
-                  en el destino.
+                    ? 'A file with the same name already exists'
+                    : conflictingNames().length + ' files with the same name were found' }}
+                  in the destination.
                 </p>
               </div>
             </div>
@@ -51,7 +51,7 @@ import { ConflictPolicy } from '../../core/api/operations-api.service';
           <!-- Body -->
           <div class="p-6">
             <div class="mb-6">
-              <h3 class="mb-3 text-xs font-semibold uppercase tracking-wider text-zinc-500">Archivos afectados</h3>
+              <h3 class="mb-3 text-xs font-semibold uppercase tracking-wider text-zinc-500">Affected files</h3>
               <ul class="max-h-48 overflow-y-auto custom-scrollbar rounded-xl border border-white/5 bg-black/20 p-2">
                 @for (name of conflictingNames(); track name) {
                   <li class="flex items-center gap-3 rounded-lg p-2 transition-colors hover:bg-white/5">
@@ -72,7 +72,7 @@ import { ConflictPolicy } from '../../core/api/operations-api.service';
                 (click)="resolve.emit('rename')"
               >
                 <i class="fa-solid fa-pen-to-square"></i>
-                Renombrar (mantener ambos)
+                Rename (keep both)
               </button>
               
               <button
@@ -81,7 +81,7 @@ import { ConflictPolicy } from '../../core/api/operations-api.service';
                 (click)="resolve.emit('overwrite')"
               >
                 <i class="fa-solid fa-file-circle-check"></i>
-                Reemplazar
+                Replace
               </button>
 
               <button
@@ -90,7 +90,7 @@ import { ConflictPolicy } from '../../core/api/operations-api.service';
                 (click)="resolve.emit('skip')"
               >
                 <i class="fa-solid fa-forward"></i>
-                Omitir estos archivos
+                Skip these files
               </button>
 
               <button
@@ -98,7 +98,7 @@ import { ConflictPolicy } from '../../core/api/operations-api.service';
                 class="group relative flex items-center justify-center gap-2 rounded-xl bg-transparent px-4 py-3 text-sm font-semibold text-zinc-400 transition-all hover:text-zinc-200 hover:bg-white/5 active:scale-95"
                 (click)="cancel.emit()"
               >
-                Cancelar operación
+                Cancel operation
               </button>
             </div>
           </div>

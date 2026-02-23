@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, ChangeDetectorRef, Component, ElementRef, ViewChild, computed, inject, input, output, signal } from '@angular/core';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, ElementRef, ViewChild, computed, inject, input, output, signal, Renderer2 } from '@angular/core';
 
 import { FileItem } from '../../../core/models/api.models';
 import { isDirectory, isImage, isVideo, isMedia, getFileIconClass, getFileIconColorClass } from '../../../shared/utils/file-item.utils';
@@ -9,10 +9,12 @@ import { formatDateTime } from '../../../shared/utils/date.utils';
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
     '(document:keydown)': 'onDocumentKeyDown($event)',
+    '(document:mouseup)': 'onDocumentMouseUp()',
+    '(document:mousemove)': 'onDocumentMouseMove($event)',
   },
   template: `
     <section
-      class="relative flex h-full flex-col overflow-hidden rounded-2xl border border-white/5 bg-zinc-900/40 shadow-xl backdrop-blur-2xl ring-1 ring-white/5"
+      class="relative flex h-full flex-col overflow-hidden rounded-2xl border border-white/5 bg-zinc-900/40 shadow-xl backdrop-blur-2xl ring-1 ring-white/5 select-none"
       (dragenter)="onExternalDragEnter($event)"
       (dragover)="onExternalDragOver($event)"
       (dragleave)="onExternalDragLeave($event)"
@@ -40,7 +42,7 @@ import { formatDateTime } from '../../../shared/utils/date.utils';
             <span class="rounded-lg bg-white/5 px-2.5 py-1 text-xs font-semibold text-zinc-300 ring-1 ring-white/10">
               {{ totalItems() }} items
             </span>
-            @if (selectedPaths().length > 1) {
+            @if (selectedPaths().length > 0) {
               <span class="rounded-lg bg-violet-500/15 px-2.5 py-1 text-xs font-semibold text-violet-300 ring-1 ring-violet-500/30">
                 {{ selectedPaths().length }} sel.
               </span>
@@ -82,11 +84,22 @@ import { formatDateTime } from '../../../shared/utils/date.utils';
       </header>
 
       <div
-        class="file-list-scrollbar flex-1 overflow-y-auto overflow-x-hidden"
+        #scrollContainer
+        class="file-list-scrollbar relative flex-1 overflow-y-auto overflow-x-hidden focus:outline-none"
         role="presentation"
         tabindex="-1"
-        (click)="onContainerClick($event)"
+        (mousedown)="onContainerMouseDown($event)"
       >
+        <!-- Selection Box -->
+        @if (isSelecting()) {
+          <div
+            class="absolute z-50 border border-violet-500/50 bg-violet-500/20 pointer-events-none"
+            [style.left.px]="selectionBox().x"
+            [style.top.px]="selectionBox().y"
+            [style.width.px]="selectionBox().width"
+            [style.height.px]="selectionBox().height"
+          ></div>
+        }
         @if (viewMode() === 'list') {
           <table class="w-full table-fixed text-left text-sm">
             <colgroup>
@@ -333,18 +346,18 @@ import { formatDateTime } from '../../../shared/utils/date.utils';
                     [checked]="isSelected(item.path)"
                     (click)="$event.stopPropagation()"
                     (change)="onCheckboxChange(item)"
-                    [attr.aria-label]="'Seleccionarionar ' + item.name"
+                    [attr.aria-label]="'Select ' + item.name"
                   />
                 </div>
 
-                <!-- Actions (Visible on hover) -->
+                <!-- Actions -->
                 <div class="absolute right-2 top-2 z-10 opacity-0 transition-opacity group-hover:opacity-100">
                   <button
                     type="button"
                     class="flex size-7 items-center justify-center rounded-lg bg-zinc-900/80 text-zinc-400 transition-all hover:bg-zinc-800 hover:text-white"
                     (click)="$event.stopPropagation(); onContextMenuButton($event, item)"
-                    aria-label="Másopcconees"
-                    title="Másopcconees"
+                    aria-label="More options"
+                    title="More options"
                   >
                     <i class="fa-solid fa-ellipsis-vertical text-xs"></i>
                   </button>
@@ -445,8 +458,10 @@ import { formatDateTime } from '../../../shared/utils/date.utils';
   `,
 })
 export class FileListComponent {
+  private readonly renderer = inject(Renderer2);
   private readonly cdr = inject(ChangeDetectorRef);
   @ViewChild('dragPreview') dragPreview!: ElementRef<HTMLElement>;
+  @ViewChild('scrollContainer') scrollContainer!: ElementRef<HTMLElement>;
 
   readonly items = input<FileItem[]>([]);
   readonly selectedPaths = input<string[]>([]);
@@ -466,9 +481,18 @@ export class FileListComponent {
   readonly navigateToParent = output<void>();
   readonly moveItems = output<{ sources: string[]; destination: string }>();
   readonly uploadFiles = output<FileList>();
+  readonly isSelectingChange = output<boolean>();
 
   readonly viewMode = input<'list' | 'grid'>('list');
   private readonly anchorPath = signal<string | null>(null);
+
+  // -- Selection Box State ---------------------------------------------------
+  readonly isSelecting = signal(false);
+  readonly selectionBox = signal({ x: 0, y: 0, width: 0, height: 0 });
+  private selectionStartPoint = { x: 0, y: 0 };
+  private initialSelection: string[] = [];
+  private cachedItemElements: Element[] = [];
+  private isMouseDown = false;
 
   // -- External drop state ---------------------------------------------------
   private externalDragCounter = 0;
@@ -523,6 +547,12 @@ export class FileListComponent {
   }
 
   onRowClick(event: MouseEvent, item: FileItem, index: number): void {
+    // Ensure we are not in selection mode (force reset)
+    this.isSelecting.set(false);
+    this.isSelectingChange.emit(false);
+    this.selectionBox.set({ x: 0, y: 0, width: 0, height: 0 });
+    this.isMouseDown = false;
+
     const items = this.items();
     const current = this.selectedPaths();
 
@@ -568,8 +598,19 @@ export class FileListComponent {
   }
 
   onDocumentKeyDown(event: KeyboardEvent): void {
+    const target = event.target as HTMLElement;
+
+    // Handle ESC to clear selection
+    if (event.key === 'Escape') {
+      if (this.selectedPaths().length > 0) {
+        this.selectionChange.emit([]);
+        this.anchorPath.set(null);
+        event.preventDefault();
+        return;
+      }
+    }
+
     if ((event.ctrlKey || event.metaKey) && event.key === 'a') {
-      const target = event.target as HTMLElement;
       // Skip when focus is inside a text input (e.g. the search box)
       if (
         target.tagName === 'TEXTAREA' ||
@@ -587,15 +628,151 @@ export class FileListComponent {
     }
   }
 
-  onContainerClick(event: MouseEvent): void {
+  onContainerMouseDown(event: MouseEvent): void {
     const target = event.target as HTMLElement;
-    // If the click is on a file item (row or card), let that handler take care of it.
-    // We only clear selection if clicking on the "empty space" of the container.
-    if (!target.closest('[data-file-item]')) {
+
+    // Ignore if clicking on a file item (let drag&drop or click handler handle it)
+    if (target.closest('[data-file-item]')) {
+      return;
+    }
+
+    // Ignore if clicking on scrollbar (simple heuristic: check if click is near edge)
+    const container = event.currentTarget as HTMLElement;
+    const rect = container.getBoundingClientRect();
+    const isScrollbarClick = event.clientX > rect.right - 15 || event.clientY > rect.bottom - 15;
+    if (isScrollbarClick) {
+      return;
+    }
+
+    event.preventDefault(); // Prevent text selection
+    
+    // Clear selection if not holding Ctrl/Shift, otherwise keep it
+    if (!event.ctrlKey && !event.metaKey && !event.shiftKey) {
       this.selectionChange.emit([]);
-      this.anchorPath.set(null);
-      // Keep focus inside the component so Ctrl+A still works
-      (event.currentTarget as HTMLElement).focus();
+      this.initialSelection = [];
+    } else {
+      this.initialSelection = [...this.selectedPaths()];
+    }
+    
+    // Focus container to capture keyboard events
+    container.focus();
+
+    this.cachedItemElements = []; 
+    this.isMouseDown = true;
+    
+    const scrollLeft = container.scrollLeft;
+    const scrollTop = container.scrollTop;
+
+    this.selectionStartPoint = {
+      x: event.clientX - rect.left + scrollLeft,
+      y: event.clientY - rect.top + scrollTop
+    };
+
+    this.selectionBox.set({
+      x: this.selectionStartPoint.x,
+      y: this.selectionStartPoint.y,
+      width: 0,
+      height: 0
+    });
+  }
+
+  onDocumentMouseMove(event: MouseEvent): void {
+    if (!this.isMouseDown) return;
+
+    const container = this.scrollContainer?.nativeElement;
+    if (!container) return;
+
+    const rect = container.getBoundingClientRect();
+    const scrollLeft = container.scrollLeft;
+    const scrollTop = container.scrollTop;
+
+    // Current point relative to container content
+    const currentX = event.clientX - rect.left + scrollLeft;
+    const currentY = event.clientY - rect.top + scrollTop;
+
+    // Check threshold if not yet selecting
+    if (!this.isSelecting()) {
+      const dx = Math.abs(currentX - this.selectionStartPoint.x);
+      const dy = Math.abs(currentY - this.selectionStartPoint.y);
+      if (dx < 3 && dy < 3) return; // Threshold of 3px
+
+      // Start selection
+      this.isSelecting.set(true);
+      this.isSelectingChange.emit(true);
+      this.cachedItemElements = Array.from(container.querySelectorAll('[data-file-item]'));
+    }
+
+    // Calculate box geometry
+    const x = Math.min(currentX, this.selectionStartPoint.x);
+    const y = Math.min(currentY, this.selectionStartPoint.y);
+    const width = Math.abs(currentX - this.selectionStartPoint.x);
+    const height = Math.abs(currentY - this.selectionStartPoint.y);
+
+    this.selectionBox.set({ x, y, width, height });
+
+    // Calculate intersection
+    this.updateSelectionFromBox(x, y, width, height);
+    
+    // Auto-scroll logic (bonus)
+    this.handleAutoScroll(event.clientY, rect);
+  }
+
+  onDocumentMouseUp(): void {
+    this.isMouseDown = false;
+    if (this.isSelecting()) {
+      this.isSelecting.set(false);
+      this.isSelectingChange.emit(false);
+      this.selectionBox.set({ x: 0, y: 0, width: 0, height: 0 });
+      this.cachedItemElements = [];
+    }
+  }
+
+  private updateSelectionFromBox(boxX: number, boxY: number, boxW: number, boxH: number): void {
+    const newSelection = new Set(this.initialSelection);
+    const items = this.items();
+    
+    const containerRect = this.scrollContainer.nativeElement.getBoundingClientRect();
+    
+    const scrollLeft = this.scrollContainer.nativeElement.scrollLeft;
+    const scrollTop = this.scrollContainer.nativeElement.scrollTop;
+    
+    const selRect = {
+      left: containerRect.left + boxX - scrollLeft,
+      top: containerRect.top + boxY - scrollTop,
+      right: containerRect.left + boxX - scrollLeft + boxW,
+      bottom: containerRect.top + boxY - scrollTop + boxH
+    };
+
+    this.cachedItemElements.forEach((el, index) => {
+      const itemRect = el.getBoundingClientRect();
+      
+      // Check intersection
+      const intersects = !(
+        itemRect.right < selRect.left || 
+        itemRect.left > selRect.right || 
+        itemRect.bottom < selRect.top || 
+        itemRect.top > selRect.bottom
+      );
+
+      const item = items[index];
+      if (intersects) {
+        newSelection.add(item.path);
+      } else if (!this.initialSelection.includes(item.path)) {
+        newSelection.delete(item.path);
+      }
+    });
+
+    this.selectionChange.emit(Array.from(newSelection));
+  }
+
+  private handleAutoScroll(clientY: number, containerRect: DOMRect): void {
+    const threshold = 50; // px from edge
+    const scrollSpeed = 10;
+    
+    if (clientY < containerRect.top + threshold) {
+      this.scrollContainer.nativeElement.scrollTop -= scrollSpeed;
+    } else if (clientY > containerRect.bottom - threshold) {
+      this.scrollContainer.nativeElement.scrollTop += scrollSpeed;
     }
   }
 

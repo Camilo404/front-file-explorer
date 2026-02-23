@@ -146,10 +146,11 @@ interface ActiveModalConfig {
             (info)="showItemInfo($event)"
             (contextMenu)="openContextMenu($event)"
             (changePage)="changePage($event)"
+            (isSelectingChange)="isSelectionInProgress.set($event)"
           />
         </div>
 
-        @if (selectedItem() && isDetailsPaneOpen() && !isDetailsSuppressedForSelection()) {
+        @if (selectedItem() && isDetailsPaneOpen() && !isDetailsSuppressedForSelection() && !isSelectionInProgress()) {
           <!-- Details Resizer -->
           <div
             class="hidden xl:flex w-3 items-center justify-center cursor-col-resize shrink-0 z-10 select-none group"
@@ -296,6 +297,7 @@ export class ExplorerPage {
   readonly detailsWidth = signal(320);
   readonly isLargeScreen = signal(false);
   readonly loadingTreePaths = signal<string[]>([]);
+  readonly isSelectionInProgress = signal(false);
 
   readonly selectedCount = computed(() => this.selectedPaths().length);
   readonly selectedItem = computed(() => {

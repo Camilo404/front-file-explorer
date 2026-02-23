@@ -41,13 +41,9 @@ export class SharesApiService {
   }
 
   getAbsolutePublicDownloadUrl(token: string): string {
-    let baseUrl = this.apiBaseUrl;
-    // Remove trailing slash if present to avoid double slashes
-    baseUrl = baseUrl.replace(/\/$/, '');
-    
-    if (!baseUrl.startsWith('http')) {
-      baseUrl = this.document.location.origin + baseUrl;
-    }
-    return `${baseUrl}${this.getPublicDownloadUrl(token)}`;
+    // Always prefer the browser's current origin for share links
+    // This ensures links work correctly regardless of internal Docker/network config
+    const origin = this.document.location.origin;
+    return `${origin}${this.getPublicDownloadUrl(token)}`;
   }
 }

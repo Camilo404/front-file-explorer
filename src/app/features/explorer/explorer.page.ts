@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, DestroyRef, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, computed, inject, signal, Renderer2 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { HttpEventType } from '@angular/common/http';
 import { ActivatedRoute, Router } from '@angular/router';
@@ -36,6 +36,8 @@ interface ExplorerUiState {
   pathHistory: string[];
   expandedTreePaths: string[];
   viewMode: 'list' | 'grid';
+  treeWidth?: number;
+  detailsWidth?: number;
 }
 
 interface ActiveModalConfig {
@@ -93,12 +95,13 @@ interface ActiveModalConfig {
         ></div>
       }
 
-      <div class="flex flex-1 gap-3 min-h-0 relative">
+      <div class="flex flex-1 min-h-0 relative">
         <!-- Tree panel: fixed drawer on mobile, in-grid on desktop -->
         <div
           class="fixed top-16 bottom-0 left-0 z-50 w-72 transition-transform duration-300 ease-in-out
                  lg:static lg:z-auto lg:w-auto lg:translate-x-0 lg:top-auto lg:bottom-auto shrink-0"
           [class.-translate-x-full]="!isMobileTreeOpen()"
+          [style.width.px]="isLargeScreen() ? treeWidth() : null"
         >
           <app-tree-panel
             class="h-full min-w-0"
@@ -113,6 +116,14 @@ interface ActiveModalConfig {
             (close)="isMobileTreeOpen.set(false)"
             (moveItems)="handleMoveItems($event)"
           />
+        </div>
+
+        <!-- Tree Resizer -->
+        <div
+            class="hidden lg:flex w-3 items-center justify-center cursor-col-resize shrink-0 z-10 select-none group"
+            (mousedown)="startResizingTree($event)"
+        >
+            <div class="w-1 h-8 bg-white/10 rounded-full group-hover:bg-blue-500/50 transition-colors"></div>
         </div>
 
         <div class="flex-1 min-w-0 h-full">
@@ -139,7 +150,15 @@ interface ActiveModalConfig {
         </div>
 
         @if (selectedItem() && isDetailsPaneOpen() && !isDetailsSuppressedForSelection()) {
-          <div class="hidden xl:block shrink-0 h-full">
+          <!-- Details Resizer -->
+          <div
+            class="hidden xl:flex w-3 items-center justify-center cursor-col-resize shrink-0 z-10 select-none group"
+            (mousedown)="startResizingDetails($event)"
+          >
+            <div class="w-1 h-8 bg-white/10 rounded-full group-hover:bg-blue-500/50 transition-colors"></div>
+          </div>
+
+          <div class="hidden xl:block shrink-0 h-full" [style.width.px]="detailsWidth()">
             <app-file-details
               [item]="selectedItem()"
               [thumbnailUrl]="thumbnailUrls()[selectedItem()!.path]"
@@ -227,6 +246,7 @@ export class ExplorerPage {
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly renderer = inject(Renderer2);
 
   private readonly storageKey = 'file-explorer.explorer-ui-state';
 
@@ -255,6 +275,9 @@ export class ExplorerPage {
 
   private pendingModalAction: ((value: string) => void) | null = null;
   private pendingConflictFiles: File[] = [];
+  private startX = 0;
+  private startWidth = 0;
+  private removeListeners: (() => void) | null = null;
   private firstRoundUploadedCount = 0;
   readonly page = signal(1);
   readonly limit = signal(50);
@@ -269,6 +292,9 @@ export class ExplorerPage {
   readonly contextMenuX = signal(0);
   readonly contextMenuY = signal(0);
   readonly isMobileTreeOpen = signal(false);
+  readonly treeWidth = signal(288);
+  readonly detailsWidth = signal(320);
+  readonly isLargeScreen = signal(false);
   readonly loadingTreePaths = signal<string[]>([]);
 
   readonly selectedCount = computed(() => this.selectedPaths().length);
@@ -343,6 +369,10 @@ export class ExplorerPage {
     });
 
     this.refresh();
+
+    const mq = window.matchMedia('(min-width: 1024px)');
+    this.isLargeScreen.set(mq.matches);
+    mq.addEventListener('change', (e) => this.isLargeScreen.set(e.matches));
 
     // Listen for real-time updates
     this.wsService.onTypes<any>([
@@ -1431,6 +1461,53 @@ export class ExplorerPage {
     this.activeModal.set(config);
   }
 
+  startResizingTree(event: MouseEvent) {
+    event.preventDefault();
+    this.startX = event.clientX;
+    this.startWidth = this.treeWidth();
+    this.startResizing((delta) => {
+      this.treeWidth.set(Math.max(200, this.startWidth + delta));
+    });
+  }
+
+  startResizingDetails(event: MouseEvent) {
+    event.preventDefault();
+    this.startX = event.clientX;
+    this.startWidth = this.detailsWidth();
+    this.startResizing((delta) => {
+      this.detailsWidth.set(Math.max(250, this.startWidth - delta));
+    });
+  }
+
+  private startResizing(callback: (delta: number) => void) {
+    document.body.style.cursor = 'col-resize';
+    document.body.style.userSelect = 'none';
+
+    const moveListener = this.renderer.listen('window', 'mousemove', (e: MouseEvent) => {
+      const delta = e.clientX - this.startX;
+      callback(delta);
+    });
+
+    const upListener = this.renderer.listen('window', 'mouseup', () => {
+      this.stopResizing();
+    });
+
+    this.removeListeners = () => {
+      moveListener();
+      upListener();
+      this.removeListeners = null;
+    };
+  }
+
+  private stopResizing() {
+    if (this.removeListeners) {
+      this.removeListeners();
+    }
+    document.body.style.cursor = '';
+    document.body.style.userSelect = '';
+    this.persistState();
+  }
+
   persistState(): void {
     const state: ExplorerUiState = {
       currentPath: this.currentPath(),
@@ -1440,6 +1517,8 @@ export class ExplorerPage {
       pathHistory: this.pathHistory(),
       expandedTreePaths: this.expandedTreePaths(),
       viewMode: this.viewMode(),
+      treeWidth: this.treeWidth(),
+      detailsWidth: this.detailsWidth(),
     };
 
     sessionStorage.setItem(this.storageKey, JSON.stringify(state));
@@ -1460,6 +1539,8 @@ export class ExplorerPage {
       this.pathHistory.set(Array.isArray(state.pathHistory) ? state.pathHistory : []);
       this.expandedTreePaths.set(Array.isArray(state.expandedTreePaths) ? state.expandedTreePaths : []);
       this.viewMode.set(state.viewMode || 'list');
+      if (state.treeWidth) this.treeWidth.set(state.treeWidth);
+      if (state.detailsWidth) this.detailsWidth.set(state.detailsWidth);
     } catch {
       sessionStorage.removeItem(this.storageKey);
     }

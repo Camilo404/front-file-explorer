@@ -8,7 +8,7 @@ import { isDirectory, getFileIconClass, getFileIconColorClass } from '../../../s
   imports: [DatePipe, DecimalPipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <aside class="flex h-full w-80 flex-col overflow-hidden rounded-2xl border border-white/5 bg-zinc-900/40 shadow-xl backdrop-blur-2xl ring-1 ring-white/5">
+    <aside class="flex h-full w-full flex-col overflow-hidden rounded-2xl border border-white/5 bg-zinc-900/40 shadow-xl backdrop-blur-2xl ring-1 ring-white/5">
       <header class="flex items-center justify-between border-b border-white/5 bg-white/5 px-5 py-4">
         <h3 class="text-sm font-bold tracking-wide text-zinc-100">Details</h3>
         <button
